@@ -108,11 +108,18 @@
         const wissen = () => { zetDag(datum, null); setDag(leegDag()); setGewijzigd(false); melding("Dag gewist"); };
 
         const bonVanDag = (bonnen || []).filter(x => (x.dagen || []).some(d => d.datum === datum));
-        const neemOver = (bon) => {
-            const d = (bon.dagen || []).find(x => x.datum === datum) || {};
-            const naUur = t => /^\d{1,2}:\d{2}$/.test(t || "") ? t : "";
-            zet({ soort: "werk", klant: bon.klantNaam || dag.klant, aankomstKlant: naUur(d.begin) || dag.aankomstKlant, vertrekKlant: naUur(d.einde) || dag.vertrekKlant });
-            melding("Overgenomen van werkbon N° " + bon.nr);
+        /* meerdere bonnen op één dag: begin van de vroegste bon en einde van de laatste bon */
+        const neemOver = () => {
+            const naUur = t => /^\d{1,2}:\d{2}$/.test(t || "") ? t.padStart(5, "0") : "";
+            const regels = [];
+            bonVanDag.forEach(bon => (bon.dagen || []).filter(x => x.datum === datum).forEach(d => regels.push({ bon, begin: naUur(d.begin), einde: naUur(d.einde) })));
+            regels.sort((a, b) => (a.begin || "99:99").localeCompare(b.begin || "99:99"));
+            const begins = regels.map(r => r.begin).filter(Boolean).sort();
+            const eindes = regels.map(r => r.einde).filter(Boolean).sort();
+            const namen = [];
+            regels.forEach(r => { const n = (r.bon.klantNaam || "").trim(); if (n && namen.indexOf(n) < 0) namen.push(n); });
+            zet({ soort: "werk", klant: namen.join(" / ") || dag.klant, aankomstKlant: begins[0] || dag.aankomstKlant, vertrekKlant: eindes[eindes.length - 1] || dag.vertrekKlant });
+            melding(bonVanDag.length > 1 ? "Overgenomen van " + bonVanDag.length + " werkbonnen: begin " + (begins[0] || "?") + ", einde " + (eindes[eindes.length - 1] || "?") : "Overgenomen van werkbon N° " + bonVanDag[0].nr);
         };
         const status = opgeslagen && opgeslagen.opgeslagen && !gewijzigd ? "opgeslagen" : C.heeftInhoud(dag) ? "concept" : "leeg";
         const isWerk = dag.soort === "werk";
@@ -125,15 +132,18 @@
                     h("input", { type: "date", value: datum, onChange: e => e.target.value && setDatum(e.target.value), "aria-label": "Kies datum" })),
                 h("button", { className: "terug", "aria-label": "Volgende dag", onClick: () => setDatum(verschuif(datum, 1)) }, "›")),
             h("div", { className: "urenStatus " + status }, status === "opgeslagen" ? "Opgeslagen" : status === "concept" ? "Nog niet opgeslagen (tussentijds bewaard)" : "Nog niets ingevuld"),
-            h("div", { className: "janee urenSoort" }, SOORTEN.map(([k, l]) => h("button", { key: k, className: "tog" + (dag.soort === k ? " aan" : ""), onClick: () => zet({ soort: k }) }, l))),
+            Veld("Soort dag", h("select", { id: "uSoort", value: dag.soort, onChange: e => zet({ soort: e.target.value }) }, SOORTEN.map(([k, l]) => h("option", { key: k, value: k }, l)))),
             isWerk ? h(React.Fragment, null,
-                bonVanDag.map(bon => h("button", { key: bon.id, className: "btn grijs klein urenBon", onClick: () => neemOver(bon) }, "Neem over van werkbon N° " + bon.nr + (bon.klantNaam ? " · " + bon.klantNaam : ""))),
+                bonVanDag.length ? h("button", { className: "btn grijs urenBon", onClick: neemOver },
+                    bonVanDag.length > 1 ? "Neem over van " + bonVanDag.length + " werkbonnen (N° " + bonVanDag.map(x => x.nr).join(", ") + ")" : "Neem over van werkbon N° " + bonVanDag[0].nr + (bonVanDag[0].klantNaam ? " · " + bonVanDag[0].klantNaam : "")) : null,
                 Veld("Klant", h("input", { id: "uKlant", list: "urenKlanten", value: dag.klant, onChange: e => zet({ klant: e.target.value }), placeholder: "Naam klant of omschrijving" })),
                 h("datalist", { id: "urenKlanten" }, (klanten || []).map(k => h("option", { key: k.id || k.naam, value: k.naam }))),
-                h("div", { className: "janee" },
-                    h("button", { className: "tog" + (dag.hotel ? " aan" : ""), onClick: () => zet({ hotel: !dag.hotel }) }, dag.hotel ? "Hotel ✓" : "Hotel")),
-                h("div", { className: "janee" },
-                    [["normaal", "Normale pauze"], ["p", "Geen pauze"], ["pt", "Geen pauze, traject"]].map(([k, l]) => h("button", { key: k, className: "tog" + ((dag.pauze || "normaal") === k ? " aan" : ""), onClick: () => zet({ pauze: k }) }, l))),
+                h("div", { className: "urenTwee2" },
+                    Veld("Pauze", h("select", { id: "uPauze", value: dag.pauze || "normaal", onChange: e => zet({ pauze: e.target.value }) },
+                        [["normaal", "Normale pauze"], ["p", "Geen pauze"], ["pt", "Geen pauze tijdens traject"]].map(([k, l]) => h("option", { key: k, value: k }, l)))),
+                    h("label", { className: "schakel" + (dag.hotel ? " aan" : "") },
+                        h("input", { type: "checkbox", checked: !!dag.hotel, onChange: e => zet({ hotel: e.target.checked }) }),
+                        h("span", { className: "schakelBol" }), "Hotel (geen dagvergoeding)")),
                 h("div", { className: "dagvelden" },
                     h("label", null, "Vertrek thuis", Tijd(dag.vertrekThuis, v => zet({ vertrekThuis: v }), "uT1")),
                     h("label", null, "Aankomst klant", Tijd(dag.aankomstKlant, v => zet({ aankomstKlant: v }), "uT2")),
