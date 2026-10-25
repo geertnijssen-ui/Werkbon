@@ -420,6 +420,10 @@ h1,.desk .appkop h1{font-weight:700}
 .vorigeknop small{font-weight:500;font-family:Inter,sans-serif;font-size:12px;color:var(--zacht)}
 .linkknop.meer{display:block;margin:4px 0 8px}
 .app.groot{zoom:1.18}
+.tijdrij.kwartier select{flex:1;min-width:0;padding:10px 6px;font:inherit;font-size:16px;color:var(--tekst);background:var(--paneel);border:1px solid var(--paneel);border-radius:4px;text-align:center}
+.tijdrij .dubbelp{align-self:center;font-weight:600;color:var(--zacht)}
+.dagvelden label:has(.kwartier){grid-column:1/-1}
+.tijdrij.kwartier .nuknop{min-width:64px}
 .popup{background:var(--bg)}
 .scanfoto{width:100%;max-height:200px;object-fit:contain;background:#000;border-radius:4px;margin:6px 0}
 .scanbezig{display:flex;align-items:center;gap:10px;padding:14px 0;color:var(--zacht);font-size:14px}
@@ -1431,10 +1435,27 @@ function Vertaler(props) {
 /* ---------- hulpmiddelen voor wie niet graag typt ---------- */
 function nuTijd() { const d = new Date(); return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"); }
 window.nuTijd = nuTijd;
+/* tijd per kwartier: uur- en minutenlijst (iPhone negeert "step" op een tijdveld) */
+function kwartierNu() {
+    const d = new Date(); let m = Math.round((d.getHours() * 60 + d.getMinutes()) / 15) * 15;
+    if (m >= 24 * 60) m = 24 * 60 - 15;
+    return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
+}
 function TijdNu(props) {
-    return React.createElement("div", { className: "tijdrij" },
-        React.createElement("input", { type: "time", value: props.waarde || "", onChange: e => props.onChange(e.target.value) }),
-        React.createElement("button", { type: "button", className: "nuknop", onClick: () => props.onChange(nuTijd()) }, props.T.nu));
+    const w = /^\d{1,2}:\d{2}$/.test(props.waarde || "") ? props.waarde.padStart(5, "0") : "";
+    const uur = w ? w.slice(0, 2) : "", min = w ? w.slice(3, 5) : "";
+    const minuten = ["00", "15", "30", "45"];
+    if (min && minuten.indexOf(min) < 0) minuten.push(min); /* oude bon met bv. 08:05 blijft zichtbaar */
+    const zet = (u, m) => props.onChange(u === "" ? "" : u + ":" + (m || "00"));
+    return React.createElement("div", { className: "tijdrij kwartier" },
+        React.createElement("select", { value: uur, "aria-label": "Uur", onChange: e => zet(e.target.value, min) },
+            React.createElement("option", { value: "" }, "--"),
+            Array.from({ length: 24 }, (x, i) => String(i).padStart(2, "0")).map(u => React.createElement("option", { key: u, value: u }, u))),
+        React.createElement("span", { className: "dubbelp" }, ":"),
+        React.createElement("select", { value: min, "aria-label": "Minuten", disabled: !uur, onChange: e => zet(uur, e.target.value) },
+            !uur ? React.createElement("option", { value: "" }, "--") : null,
+            minuten.map(m => React.createElement("option", { key: m, value: m }, m))),
+        React.createElement("button", { type: "button", className: "nuknop", onClick: () => props.onChange(kwartierNu()) }, props.T.nu));
 }
 /* inspreken via de spraakherkenning van de browser (Safari/Chrome) */
 function Dicteer(props) {
