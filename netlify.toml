@@ -1,0 +1,4 @@
+# Statische site: geen build nodig, Netlify publiceert de map zoals ze is.
+[build]
+  publish = "."
+  command = ""
