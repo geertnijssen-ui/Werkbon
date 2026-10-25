@@ -1,6 +1,8 @@
 /* Werkbon MT Service: offline cache.
    Bij elke nieuwe upload: verhoog VERSIE hier EN const VERSIE in index.html (zelfde nummer). */
-const VERSIE = "werkbon-1.11";
+const VERSIE = "werkbon-1.12";
+/* tekstherkenning (±13 MB) apart bewaren, zodat ze niet bij elke update opnieuw geladen wordt */
+const OCR = "werkbon-ocr-5.1.1";
 const BESTANDEN = [
   "./", "index.html", "manifest.webmanifest", "uren-calc.js", "uren-pdf.js", "uren.js",
   "libs/react.production.min.js", "libs/react-dom.production.min.js",
@@ -13,7 +15,7 @@ self.addEventListener("install", e => {
   e.waitUntil(caches.open(VERSIE).then(c => c.addAll(BESTANDEN)).then(() => self.skipWaiting()));
 });
 self.addEventListener("activate", e => {
-  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== VERSIE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
+  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== VERSIE && k !== OCR).map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
 self.addEventListener("fetch", e => {
   const req = e.request;
@@ -25,6 +27,10 @@ self.addEventListener("fetch", e => {
       caches.open(VERSIE).then(c => c.put("index.html", kopie));
       return r;
     }).catch(() => caches.match("index.html")));
+    return;
+  }
+  if (new URL(req.url).pathname.indexOf("/libs/ocr/") >= 0) {
+    e.respondWith(caches.open(OCR).then(c => c.match(req).then(r => r || fetch(req).then(resp => { if (resp.ok) c.put(req, resp.clone()); return resp; }))));
     return;
   }
   e.respondWith(caches.match(req).then(r => r || fetch(req)));

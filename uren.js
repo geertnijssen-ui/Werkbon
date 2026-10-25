@@ -66,7 +66,9 @@
 
     /* ---------- kleine bouwstenen ---------- */
     const Veld = (label, input, extra) => h("label", { className: "veld" + (extra ? " " + extra : "") }, h("span", null, label), input);
-    const Tijd = (waarde, zet, id) => h("input", { id, type: "time", value: waarde || "", onChange: e => zet(e.target.value) });
+    const Tijd = (waarde, zet, id) => h("div", { className: "tijdrij" },
+        h("input", { id, type: "time", value: waarde || "", onChange: e => zet(e.target.value) }),
+        h("button", { type: "button", className: "nuknop", onClick: () => zet(window.nuTijd ? window.nuTijd() : "") }, "Nu"));
     const Num = (waarde, zet, id, ph) => h("input", { id, type: "number", inputMode: "numeric", value: waarde === undefined ? "" : waarde, placeholder: ph || "", onChange: e => zet(e.target.value) });
 
     function Resultaat({ b, dag }) {
