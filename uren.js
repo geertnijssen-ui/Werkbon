@@ -174,14 +174,29 @@
                 h("div", { className: "stat" }, h("b", null, getal(T.recup, 2)), h("span", null, "Recup maand")),
                 h("div", { className: "stat" }, h("b", null, getal(md.nieuwRecup, 2)), h("span", null, "Recup saldo")),
                 h("div", { className: "stat" }, h("b", null, "€" + getal(T.vergoeding, 0)), h("span", null, "Dagvergoeding"))),
-            h("div", { className: "urenLijst" }, md.rijen.map(r => {
+            h("div", { className: "urenTwee" }, h("div", null,
+            h("div", { className: "urenLijst" },
+                /* kolomkoppen en extra kolommen verschijnen alleen op een breed scherm */
+                h("div", { className: "urenLijstRij urenKopRij alleenDesk" },
+                    h("span", { className: "d" }, "Dag"), h("span", { className: "k" }, "Klant / code"),
+                    h("span", { className: "urenX" }, "Vertr."), h("span", { className: "urenX" }, "Aank."),
+                    h("span", { className: "urenX" }, "Vertr."), h("span", { className: "urenX" }, "Thuis"),
+                    h("span", { className: "urenX km" }, "Km"), h("span", { className: "u" }, "Recup")),
+                md.rijen.map(r => {
                 const lbl = C.label(r.dag, "prest");
+                const d = r.dag || {};
                 return h("button", { key: r.datum, className: "urenLijstRij" + (r.wd >= 6 ? " weekend" : "") + (r.dag && !r.dag.opgeslagen ? " concept" : ""), onClick: () => openDag(r.datum) },
                     h("span", { className: "d" }, DAGNAAM[r.wd].slice(0, 2) + " " + Number(r.datum.slice(8))),
                     h("span", { className: "k" }, lbl || (r.wd >= 6 ? "" : "–")),
+                    h("span", { className: "urenX" }, d.vertrekThuis || ""),
+                    h("span", { className: "urenX" }, d.aankomstKlant || ""),
+                    h("span", { className: "urenX" }, d.vertrekKlant || ""),
+                    h("span", { className: "urenX" }, d.aankomstThuis || ""),
+                    h("span", { className: "urenX km" }, d.kmStart && d.kmEind ? (Number(d.kmEind) - Number(d.kmStart)) + " km" : ""),
                     h("span", { className: "u" }, r.b.recup !== null ? getal(r.b.recup, 2) : ""));
             })),
             h("div", { className: "infoblok klein" }, "Verlof: " + md.verlof.opgenomen + " opgenomen, " + md.verlof.toekomst + " gepland, " + md.verlof.rest + " vrij van " + md.verlof.teNemen + ". Recupdagen deze maand: " + T.recupDagen + "."),
+            ), h("div", null,
             h("h2", null, "Maandblad"),
             h("div", { className: "tabs" },
                 h("button", { className: "tab" + (voorbeeld === "cdb" ? " aan" : ""), onClick: () => setVoorbeeld(voorbeeld === "cdb" ? "" : "cdb") }, "Bekijk CDB"),
@@ -191,7 +206,7 @@
             h("button", { className: "btn", onClick: () => verstuur("cdb") }, "CDB mailen naar " + (mail.cdbNaam || "Martine")),
             h("button", { className: "btn", onClick: () => verstuur("prest") }, "Prest mailen naar " + (mail.prestNaam || "Jo / Franck")),
             h("button", { className: "btn grijs", disabled: true }, "Direct verzenden (na de Microsoft-koppeling)"),
-            h("p", { className: "klein" }, "Mailen opent het deelmenu: kies Outlook. Het e-mailadres staat dan al op je klembord, zodat je het in het Aan-veld kunt plakken."));
+            h("p", { className: "klein" }, "Mailen opent het deelmenu: kies Outlook. Het e-mailadres staat dan al op je klembord, zodat je het in het Aan-veld kunt plakken."))));
     }
 
     /* ---------- aankopen (Fact) ---------- */
