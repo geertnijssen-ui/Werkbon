@@ -366,10 +366,9 @@
 
         const TABS = [["dag", "Dag"], ["maand", "Maand"], ["fact", "Aankopen"], ["stat", "Statistiek"], ["inst", "Instellingen"]];
         return h("div", { className: "scherm" },
-            h("div", { className: "kop" },
-                h("button", { className: "terug", onClick: onTerug, "aria-label": "Terug" }, "‹"),
-                h("h1", null, "Uren " + jaar),
-                h("div", { className: "vlaggen leeg" })),
+            h("div", { className: "appkop" },
+                h("button", { className: "terug", onClick: onTerug, "aria-label": "Terug" }, window.Ic ? window.Ic("terug") : "‹"),
+                h("h1", null, "Uren " + jaar)),
             h("div", { className: "tabs urenTabs" }, TABS.map(([k, l]) => h("button", { key: k, className: "tab" + (tab === k ? " aan" : ""), onClick: () => setTab(k) }, l))),
             tab === "dag" ? h(DagScherm, { key: datum, datum, setDatum, dagen, zetDag, params, bonnen, klanten, melding: setMelding }) : null,
             tab === "maand" ? h(MaandScherm, { jaar: mm.j, maand: mm.m, setMaand: (m, j) => setMm({ j, m }), dagen, params, jaarP: mm.j === jaar ? jaarP : Object.assign({}, jaarP, { overdrachtRecup: 0, overdrachtVerlof: 0 }), naam, mail, openDag: d => { setDatum(d); setTab("dag"); }, melding: setMelding, setBezig }) : null,
