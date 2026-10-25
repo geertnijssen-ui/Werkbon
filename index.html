@@ -420,6 +420,8 @@ h1,.desk .appkop h1{font-weight:700}
 .vorigeknop small{font-weight:500;font-family:Inter,sans-serif;font-size:12px;color:var(--zacht)}
 .linkknop.meer{display:block;margin:4px 0 8px}
 .app.groot{zoom:1.18}
+.kmWaarsch{display:flex;flex-direction:column;gap:6px;border:1px solid var(--acc);background:var(--acc-zacht);border-radius:4px;padding:10px 12px;margin:8px 0}
+.kmWaarsch span{font-size:14px}
 .startstop{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
 .startstop .btn{min-height:64px;justify-content:flex-start;text-align:left;gap:10px;padding:10px 12px}
 .startstop .btn span{display:flex;flex-direction:column;line-height:1.2}
@@ -1957,7 +1959,7 @@ function App() {
             React.createElement("button", { className: "btn" + (urenVandaag && urenVandaag.vertrekThuis && !urenVandaag.aankomstThuis ? "" : " grijs"), onClick: () => setKmScan("thuis") }, Ic("camera"),
                 React.createElement("span", null, T.stop, React.createElement("small", null, urenVandaag && urenVandaag.aankomstThuis ? urenVandaag.aankomstThuis + (urenVandaag.kmEind ? " · " + urenVandaag.kmEind + " km" : "") : T.scanTeller)))) : null,
         kmScan && window.KmScan ? React.createElement(window.KmScan, { moment: kmScan, vorigeKm: window.urenScan.vorigeKm(kmScan), melding: setMelding, onSluit: () => setKmScan(""),
-            onKlaar: (km, tijd) => { window.urenScan.opslaan(kmScan, km, tijd); setKmScan(""); setMelding((kmScan === "vertrek" ? T.start : T.stop) + ": " + (tijd || "") + (km ? " · " + km + " km" : "")); } }) : null,
+            onKlaar: (km, tijd, bevestigd) => { window.urenScan.opslaan(kmScan, km, tijd, bevestigd); setKmScan(""); setMelding((kmScan === "vertrek" ? T.start : T.stop) + ": " + (tijd || "") + (km ? " · " + km + " km" : "")); } }) : null,
         React.createElement("div", { className: "sectiekop" },
             React.createElement("h2", null, T.recent),
             bonnen.length ? React.createElement("button", { className: "linkknop", onClick: () => setView("lijst") }, T.allesBekijken) : null),
