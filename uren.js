@@ -10,7 +10,11 @@
     const DAGNAAM = ["", "Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
     const MAAND = ["januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober", "november", "december"];
     const SOORTEN = [["werk", "Werkdag"], ["V", "Verlof"], ["R", "Recup"], ["F", "Feestdag"], ["Z", "Ziek"]];
-    const getal = (v, dec) => (v === null || v === undefined || isNaN(v)) ? "–" : Number(v).toLocaleString("nl-BE", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+    const getal = (v, dec) => {
+        if (v === null || v === undefined || isNaN(v)) return "–";
+        const t = Number(v).toLocaleString("nl-BE", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+        return /^-0(,0+)?$/.test(t) ? t.slice(1) : t; /* geen "-0,00" */
+    };
     const uren = v => (v === null || v === undefined) ? "–" : (v > 0 ? "+" : "") + getal(v, 2) + " u";
     const verschuif = (datum, n) => { const d = new Date(datum + "T12:00:00"); d.setDate(d.getDate() + n); return C.isoDatum(d.getFullYear(), d.getMonth() + 1, d.getDate()); };
     const leesbaar = datum => { const d = new Date(datum + "T12:00:00"); return DAGNAAM[C.isoWeekdag(datum)] + " " + d.getDate() + " " + MAAND[d.getMonth()] + " " + d.getFullYear(); };
@@ -126,7 +130,7 @@
         const status = opgeslagen && opgeslagen.opgeslagen && !gewijzigd ? "opgeslagen" : C.heeftInhoud(dag) ? "concept" : "leeg";
         const isWerk = dag.soort === "werk";
 
-        return h("div", null,
+        return h("div", { className: "urenDag" },
             h("div", { className: "urenDatum" },
                 h("button", { className: "terug", "aria-label": "Vorige dag", onClick: () => setDatum(verschuif(datum, -1)) }, "‹"),
                 h("div", { className: "urenDatumMidden" },
@@ -217,7 +221,6 @@
                 h("div", { style: { transform: "scale(" + schaal + ")", transformOrigin: "0 0", width: "794px" }, dangerouslySetInnerHTML: { __html: html } })) : null,
             h("button", { className: "btn", onClick: () => verstuur("cdb") }, "CDB mailen naar " + (mail.cdbNaam || "Martine")),
             h("button", { className: "btn", onClick: () => verstuur("prest") }, "Prest mailen naar " + (mail.prestNaam || "Jo / Franck")),
-            h("button", { className: "btn grijs", disabled: true }, "Direct verzenden (na de Microsoft-koppeling)"),
             h("p", { className: "klein" }, "Mailen opent het deelmenu: kies Outlook. Het e-mailadres staat dan al op je klembord, zodat je het in het Aan-veld kunt plakken."))));
     }
 
