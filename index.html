@@ -545,7 +545,7 @@ const UI = {
         delen: "Delen", afdrukken: "Afdrukken", onedrive: "OneDrive", bewerken: "Bewerken", kopieren: "Kopiëren",
         bedrijf: "Bedrijf", reeks: "Nummerreeks", van: "Van", tot: "Tot", volgendVrij: "Volgend vrij nummer",
         lijstNrs: "Lijst openen", gebruikteNrs: "Gebruikte nummers", vrijgeven: "Vrijgeven",
-        appTaal: "Taal van de app", bonTaalStd: "Standaardtaal werkbon",
+        appTaal: "Taal van de app", dezeTaal: "Taal van deze werkbon", bonTaalStd: "Standaardtaal werkbon",
         handtekening: "Handtekening", wissen: "Wissen", vast: "Vastgelegd",
         delenTab: "Delen", onedriveUrl: "OneDrive map-URL", mailtekst: "Mailtekst",
         klantExport: "Klanten exporteren", klantImport: "Klanten importeren",
@@ -577,7 +577,7 @@ const UI = {
         delen: "Partager", afdrukken: "Imprimer", onedrive: "OneDrive", bewerken: "Modifier", kopieren: "Copier",
         bedrijf: "Société", reeks: "Série de numéros", van: "De", tot: "À", volgendVrij: "Prochain numéro libre",
         lijstNrs: "Ouvrir la liste", gebruikteNrs: "Numéros utilisés", vrijgeven: "Libérer",
-        appTaal: "Langue de l'application", bonTaalStd: "Langue par défaut du bon",
+        appTaal: "Langue de l'application", dezeTaal: "Langue de ce bon", bonTaalStd: "Langue par défaut du bon",
         handtekening: "Signature", wissen: "Effacer", vast: "Enregistrée",
         delenTab: "Partage", onedriveUrl: "URL du dossier OneDrive", mailtekst: "Texte de l'e-mail",
         klantExport: "Exporter les clients", klantImport: "Importer des clients",
@@ -609,7 +609,7 @@ const UI = {
         delen: "Share", afdrukken: "Print", onedrive: "OneDrive", bewerken: "Edit", kopieren: "Copy",
         bedrijf: "Company", reeks: "Number range", van: "From", tot: "To", volgendVrij: "Next free number",
         lijstNrs: "Open list", gebruikteNrs: "Used numbers", vrijgeven: "Release",
-        appTaal: "App language", bonTaalStd: "Default work order language",
+        appTaal: "App language", dezeTaal: "Language of this work order", bonTaalStd: "Default work order language",
         handtekening: "Signature", wissen: "Clear", vast: "Captured",
         delenTab: "Sharing", onedriveUrl: "OneDrive folder URL", mailtekst: "E-mail text",
         klantExport: "Export customers", klantImport: "Import customers",
@@ -2110,6 +2110,9 @@ function App() {
         React.createElement("div", { className: "veld" },
             React.createElement("span", null, T.beeindigd),
             React.createElement(JaNee, { waarde: bon.beeindigd, T: T, onChange: v => zetBon({ beeindigd: v }) }))));
+    const bonTaalKeuze = () => React.createElement("div", { className: "veld" },
+        React.createElement("span", null, T.dezeTaal),
+        React.createElement("div", { className: "taalrij" }, ["nl", "fr", "de", "en"].map(t => React.createElement("button", { key: t, type: "button", className: "tog" + (bon.taal === t ? " aan" : ""), onClick: () => zetBon({ taal: t }) }, VLAG[t]))));
     const stap4 = () => (React.createElement("div", null,
         React.createElement("div", { className: "infoblok" },
             React.createElement("div", null,
@@ -2118,6 +2121,7 @@ function App() {
                 React.createElement("b", null, settings.techNaam || "—")),
             settings.techSig ? React.createElement("img", { className: "sigMini", src: settings.techSig, alt: "" }) : React.createElement("span", { className: "waarschuwing" }, T.geenTech)),
         React.createElement(Veld, { label: T.tech2, waarde: bon.tech2, onChange: v => zetBon({ tech2: v }) }),
+        bonTaalKeuze(),
         React.createElement("button", { className: "btn groot", onClick: () => {
                 if (!bon.klantNaam || !bon.machineNaam || !bon.beschrijving) {
                     setMelding(T.verplicht);
@@ -2137,6 +2141,7 @@ function App() {
             stap < 4 ? React.createElement("button", { className: "btn", onClick: volgendeStap }, T.volgende) : null))) : null;
     const preview = bon ? (React.createElement("div", { className: "scherm preview" },
         React.createElement("p", { className: "draaihint" }, L.pDraai),
+        bonTaalKeuze(),
         React.createElement(BonReplica, { bon: bon, settings: settings }),
         React.createElement("div", { className: "tekenzone" },
             React.createElement("label", { className: "veld" },
