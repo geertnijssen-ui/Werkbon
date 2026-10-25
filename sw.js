@@ -1,6 +1,6 @@
 /* Werkbon MT Service: offline cache.
    Bij elke nieuwe upload: verhoog VERSIE hier EN const VERSIE in index.html (zelfde nummer). */
-const VERSIE = "werkbon-1.14";
+const VERSIE = "werkbon-1.15";
 /* tekstherkenning (±13 MB) apart bewaren, zodat ze niet bij elke update opnieuw geladen wordt */
 const OCR = "werkbon-ocr-5.1.1";
 const BESTANDEN = [
@@ -29,7 +29,8 @@ self.addEventListener("fetch", e => {
     }).catch(() => caches.match("index.html")));
     return;
   }
-  if (new URL(req.url).pathname.indexOf("/libs/ocr/") >= 0) {
+  /* OCR en Excel-lezer: pas laden bij eerste gebruik, bewaard over updates heen */
+  if (/\/libs\/(ocr|xlsx)\//.test(new URL(req.url).pathname)) {
     e.respondWith(caches.open(OCR).then(c => c.match(req).then(r => r || fetch(req).then(resp => { if (resp.ok) c.put(req, resp.clone()); return resp; }))));
     return;
   }

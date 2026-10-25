@@ -297,7 +297,127 @@
     }
 
     /* ---------- instellingen (PR + PT + mail) ---------- */
-    function InstScherm({ params, setParams, jaarP, setJaarP, naam, setNaam, mail, setMail }) {
+    /* ---------- import uit de Excel-timesheet (tabblad Input, tabblad PT) ---------- */
+    let xlsxLaden = null;
+    const laadXlsx = () => xlsxLaden || (xlsxLaden = new Promise((ok, fout) => {
+        if (window.XLSX) return ok(window.XLSX);
+        const sc = document.createElement("script");
+        sc.src = "libs/xlsx/xlsx.mini.min.js";
+        sc.onload = () => ok(window.XLSX);
+        sc.onerror = () => { xlsxLaden = null; fout(new Error("laden")); };
+        document.head.appendChild(sc);
+    }));
+    /* 7.45 -> "07:45", 8.3 -> "08:30" (u.mm zoals in de Excel) */
+    const umTijd = v => {
+        if (v === null || v === undefined || v === "") return "";
+        if (typeof v === "string") { const m = v.trim().match(/^(\d{1,2})[.,:h](\d{1,2})?$/); if (!m) return ""; v = Number(m[1]) + (m[2] ? Number((m[2] + "0").slice(0, 2)) / 100 : 0); }
+        const u = Math.floor(v + 1e-9), mi = Math.round((v - u) * 100);
+        if (u > 24 || mi > 59) return "";
+        return String(u).padStart(2, "0") + ":" + String(mi).padStart(2, "0");
+    };
+    const serieDatum = n => { const d = new Date(Date.UTC(1899, 11, 30) + Math.round(n) * 86400000); return C.isoDatum(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate()); };
+    function leesExcel(buf, XLSX) {
+        const wb = XLSX.read(buf, { type: "array" });
+        const ws = wb.Sheets["Input"];
+        if (!ws) throw new Error("Tabblad Input niet gevonden");
+        /* vaste kolommen van het Input-blad: C datum, D klant, E-F km, G-J tijden */
+        const bereik = XLSX.utils.decode_range(ws["!ref"]);
+        const rijen = [];
+        for (let i = bereik.s.r; i <= bereik.e.r; i++) {
+            rijen.push([0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(c => { const cel = ws[XLSX.utils.encode_cell({ r: i, c })]; return cel && cel.v !== "" ? cel.v : null; }));
+        }
+        const dagen = {};
+        rijen.forEach(r => {
+            const dn = r[2];
+            if (typeof dn !== "number" || dn < 30000) return;
+            const ruw = r[3] === null ? "" : String(r[3]);
+            const km = v => (typeof v === "number" ? String(v) : "");
+            const tijden = [r[6], r[7], r[8], r[9]].map(umTijd);
+            if (!ruw.trim() && !km(r[4]) && !tijden.some(Boolean)) return;
+            const dag = { soort: "werk", klant: "", opm: "", hotel: false, pauze: "normaal", kmStart: km(r[4]), kmEind: km(r[5]), vertrekThuis: tijden[0], aankomstKlant: tijden[1], vertrekKlant: tijden[2], aankomstThuis: tijden[3], opgeslagen: true, bron: "excel" };
+            const code = ruw.match(/^\s*([VCZMRF])(\s|$)(.*)$/i);
+            if (code) {
+                const c = code[1].toUpperCase();
+                dag.soort = c === "C" ? "V" : c === "M" ? "Z" : c;
+                dag.opm = code[3].trim();
+                dag.kmStart = dag.kmEind = dag.vertrekThuis = dag.aankomstKlant = dag.vertrekKlant = dag.aankomstThuis = "";
+            } else {
+                let k = ruw;
+                const suf = k.match(/\s*,\s*(h|p|pt|hp|hpt)$/i); /* zoals de Excel: een spatie na ",p" telt niet als code */
+                if (suf) {
+                    const s = suf[1].toLowerCase();
+                    dag.hotel = s[0] === "h";
+                    const rest = dag.hotel ? s.slice(1) : s;
+                    dag.pauze = rest === "p" ? "p" : rest === "pt" ? "pt" : "normaal";
+                    k = k.slice(0, suf.index);
+                }
+                dag.klant = k.trim();
+            }
+            dagen[serieDatum(dn)] = dag;
+        });
+        let jaar = null;
+        const pt = wb.Sheets["PT"];
+        if (pt) {
+            const w = a => pt[a] ? pt[a].v : undefined;
+            if (typeof w("D6") === "number") jaar = { jaar: w("D6"), overdrachtVerlof: Number(w("D8")) || 0, verlofdagen: Number(w("D9")) || 0, overdrachtRecup: Number(w("D10")) || 0 };
+        }
+        const naam = pt && pt["D5"] ? String(pt["D5"].v || "").trim() : "";
+        return { dagen, jaar, naam };
+    }
+    function ExcelImport({ dagen, importeer, melding }) {
+        const [res, setRes] = useState(null);
+        const [kies, setKies] = useState({});
+        const [metJaar, setMetJaar] = useState(true);
+        const [bezig, setBezig] = useState(false);
+        const kiesBestand = async e => {
+            const f = e.target.files && e.target.files[0];
+            e.target.value = "";
+            if (!f) return;
+            setBezig(true);
+            try {
+                const XLSX = await laadXlsx();
+                const r = leesExcel(new Uint8Array(await f.arrayBuffer()), XLSX);
+                const maanden = {};
+                Object.keys(r.dagen).forEach(k => { maanden[k.slice(0, 7)] = true; });
+                if (!Object.keys(maanden).length) throw new Error("Geen ingevulde dagen gevonden");
+                setRes(r); setKies(maanden);
+            } catch (err) {
+                melding(err && err.message === "laden" ? "Excel-lezer laden mislukt: probeer opnieuw met netwerk" : "Dit bestand kan ik niet lezen" + (err && err.message && err.message !== "laden" ? " (" + err.message + ")" : ""));
+            }
+            setBezig(false);
+        };
+        const maanden = res ? Object.keys(kies).sort() : [];
+        const aantal = m => Object.keys(res.dagen).filter(k => k.slice(0, 7) === m).length;
+        const bestaand = m => Object.keys(dagen).filter(k => k.slice(0, 7) === m && C.heeftInhoud(dagen[k])).length;
+        const doe = () => {
+            const n = {};
+            Object.keys(res.dagen).forEach(k => { if (kies[k.slice(0, 7)]) n[k] = res.dagen[k]; });
+            const tel = Object.keys(n).length;
+            if (!tel) { melding("Kies minstens één maand"); return; }
+            if (!window.confirm(tel + " dagen overnemen? Dagen die al in de app staan op dezelfde datum worden overschreven.")) return;
+            importeer(n, metJaar ? res.jaar : null, res.naam);
+            setRes(null);
+            melding(tel + " dagen overgenomen uit Excel");
+        };
+        return h("div", { className: "machineKaart" },
+            h("b", null, "Overnemen uit Excel-timesheet"),
+            h("p", { className: "klein" }, "Kies je Excel-bestand (CDB / time sheet). De app leest het tabblad Input en zet de gekozen maanden in de timesheet."),
+            h("label", { className: "btn grijs" }, bezig ? "Bezig met lezen…" : "Excel-bestand kiezen",
+                h("input", { type: "file", accept: ".xlsx,.xlsm,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", style: { display: "none" }, onChange: kiesBestand, disabled: bezig })),
+            res ? h("div", { className: "xlImport" },
+                maanden.map(m => h("label", { key: m, className: "vinkrij" },
+                    h("input", { type: "checkbox", checked: !!kies[m], onChange: e => setKies(Object.assign({}, kies, { [m]: e.target.checked })) }),
+                    h("span", null, MAAND[Number(m.slice(5, 7)) - 1] + " " + m.slice(0, 4) + " · " + aantal(m) + (aantal(m) === 1 ? " dag" : " dagen") + (bestaand(m) ? " (" + bestaand(m) + " al in de app)" : "")))),
+                res.jaar ? h("label", { className: "vinkrij" },
+                    h("input", { type: "checkbox", checked: metJaar, onChange: e => setMetJaar(e.target.checked) }),
+                    h("span", null, "Ook jaargegevens (jaar " + res.jaar.jaar + ", " + res.jaar.verlofdagen + " verlofdagen, overdracht recup " + getal(res.jaar.overdrachtRecup, 2) + " u)")) : null,
+                h("p", { className: "klein" }, "Tip: neem alle maanden van het jaar over, dan kloppen je recup- en verlofsaldo."),
+                h("div", { className: "rijtje" },
+                    h("button", { className: "btn grijs", onClick: () => setRes(null) }, "Annuleren"),
+                    h("button", { className: "btn", onClick: doe }, "Overnemen"))) : null);
+    }
+
+    function InstScherm({ params, setParams, jaarP, setJaarP, naam, setNaam, mail, setMail, dagen, importeer, melding }) {
         const zetR = (wd, v) => setParams(Object.assign({}, params, { rooster: Object.assign({}, params.rooster, { [wd]: Object.assign({}, params.rooster[wd], v) }) }));
         const zetP = v => setParams(Object.assign({}, params, v));
         const zetJ = v => setJaarP(Object.assign({}, jaarP, v));
@@ -305,6 +425,7 @@
         const inp = (waarde, zet, type, extra) => h("input", Object.assign({ type: type || "text", value: waarde === undefined || waarde === null ? "" : waarde, onChange: e => zet(type === "number" ? e.target.value : e.target.value) }, extra || {}));
         const wkUren = [1, 2, 3, 4, 5].reduce((s, i) => s + (Number(params.rooster[i].uren) || 0), 0);
         return h("div", null,
+            h(ExcelImport, { dagen, importeer, melding }),
             h("h2", null, "Persoonlijk en jaar"),
             Veld("Naam technieker (komt op de bladen)", inp(naam, setNaam)),
             h("div", { className: "dagvelden" },
@@ -371,6 +492,11 @@
             bewaar("uren", n);
             return n;
         });
+        const importeer = (nieuw, jaarNieuw, naamNieuw) => {
+            setDagen(oud => { const n = Object.assign({}, oud, nieuw); bewaar("uren", n); return n; });
+            if (jaarNieuw) setJaarP(Object.assign({}, jaarP, jaarNieuw));
+            if (naamNieuw && !naam) setNaam(naamNieuw);
+        };
         /* het jaar van de bladen volgt het jaar uit de instellingen */
         const jaar = Number(jaarP.jaar) || new Date().getFullYear();
         const recupNu = useMemo(() => {
@@ -389,7 +515,7 @@
             tab === "maand" ? h(MaandScherm, { jaar: mm.j, maand: mm.m, setMaand: (m, j) => setMm({ j, m }), dagen, params, jaarP: mm.j === jaar ? jaarP : Object.assign({}, jaarP, { overdrachtRecup: 0, overdrachtVerlof: 0 }), naam, mail, openDag: d => { setDatum(d); setTab("dag"); }, melding: setMelding, setBezig }) : null,
             tab === "fact" ? h(FactScherm, { jaar, aankopen, zetAankopen, recupNu, params, naam, mail, melding: setMelding, setBezig }) : null,
             tab === "stat" ? h(StatScherm, { jaar, dagen }) : null,
-            tab === "inst" ? h(InstScherm, { params, setParams, jaarP, setJaarP, naam, setNaam, mail, setMail }) : null);
+            tab === "inst" ? h(InstScherm, { params, setParams, jaarP, setJaarP, naam, setNaam, mail, setMail, dagen, importeer, melding: setMelding }) : null);
     }
 
     window.UrenModule = UrenModule;
