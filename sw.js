@@ -1,6 +1,6 @@
 /* Werkbon MT Service: offline cache.
    Bij elke nieuwe upload: verhoog VERSIE hier EN const VERSIE in index.html (zelfde nummer). */
-const VERSIE = "werkbon-1.12";
+const VERSIE = "werkbon-1.13";
 /* tekstherkenning (±13 MB) apart bewaren, zodat ze niet bij elke update opnieuw geladen wordt */
 const OCR = "werkbon-ocr-5.1.1";
 const BESTANDEN = [
