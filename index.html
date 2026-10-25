@@ -420,6 +420,11 @@ h1,.desk .appkop h1{font-weight:700}
 .vorigeknop small{font-weight:500;font-family:Inter,sans-serif;font-size:12px;color:var(--zacht)}
 .linkknop.meer{display:block;margin:4px 0 8px}
 .app.groot{zoom:1.18}
+/* onderste balk: buiten de ingezoomde .app (anders schuift hij mee op iPhone), geen rubberband-scroll, weg zolang het toetsenbord open is */
+html,body{overscroll-behavior-y:none}
+.tabbalk{transform:translateZ(0);-webkit-transform:translateZ(0)}
+.tabbalk.groot{zoom:1.18}
+body.typen .tabbalk{display:none}
 .xlImport{display:flex;flex-direction:column;gap:8px;margin-top:6px}
 .vinkrij{display:flex;align-items:center;gap:10px;font-size:15px}
 .vinkrij input{width:22px;height:22px;accent-color:var(--acc);flex:none}
@@ -2417,7 +2422,7 @@ function App() {
     const MENU = [["dash", "huis", T.dash, ["dash"]], ["taal", "plus", T.nieuw, ["taal", "wizard"]], ["lijst", "bon", T.bonnen, ["lijst", "acties", "preview", "tekenvol"]], ["uren", "klok", T.uren2, ["uren"]], ["setup", "instel", T.setup, ["setup"]]];
     const MOBMENU = [["dash", "huis", T.dash, ["dash"]], ["lijst", "bon", T.bonnen, ["lijst", "acties"]], ["taal", "plus", T.nieuwKort, []], ["uren", "klok", T.urenKort, ["uren"]], ["setup", "instel", T.setup, ["setup"]]];
     const metTabbalk = !desk && ["dash", "lijst", "uren", "setup", "acties"].indexOf(view) >= 0;
-    const tabbalk = metTabbalk ? React.createElement("nav", { className: "tabbalk" }, MOBMENU.map(([v, ic, lbl, actief]) => React.createElement("button", { key: v, className: "tbItem" + (v === "taal" ? " nieuw" : "") + (actief.indexOf(view) >= 0 ? " aan" : ""), onClick: () => setView(v) },
+    const tabbalk = metTabbalk ? React.createElement("nav", { className: "tabbalk" + (settings.groot ? " groot" : "") }, MOBMENU.map(([v, ic, lbl, actief]) => React.createElement("button", { key: v, className: "tbItem" + (v === "taal" ? " nieuw" : "") + (actief.indexOf(view) >= 0 ? " aan" : ""), onClick: () => setView(v) },
         Ic(ic), React.createElement("span", null, lbl)))) : null;
     const zijbalk = desk ? React.createElement("aside", { className: "zijbalk" },
         React.createElement("div", { className: "zbMerk" }, React.createElement("img", { src: "icons/logo-mt.png", alt: "MT Service" }), React.createElement("span", null, "Werkbon")),
@@ -2439,13 +2444,16 @@ function App() {
         view === "acties" && acties,
         view === "setup" && setup,
         view === "uren" && window.UrenModule ? React.createElement(window.UrenModule, { onTerug: () => setView("dash"), bonnen, klanten, settings, setMelding, setBezig }) : null,
-        tabbalk,
         popups,
         melding ? React.createElement("div", { className: "toast" }, melding) : null,
         bezig ? React.createElement("div", { className: "overlay bezig" },
-            React.createElement("div", { className: "popup" }, bezig)) : null)));
+            React.createElement("div", { className: "popup" }, bezig)) : null), tabbalk));
 }
 ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App, null));
+/* toetsenbord open = tekstveld actief: onderste balk verbergen, anders duwt iOS hem mee omhoog */
+const isTypveld = el => el && (el.tagName === "TEXTAREA" || (el.tagName === "INPUT" && !/^(checkbox|radio|button|submit|file|range|color)$/i.test(el.type)) || el.isContentEditable);
+document.addEventListener("focusin", e => { if (isTypveld(e.target)) document.body.classList.add("typen"); });
+document.addEventListener("focusout", () => setTimeout(() => { if (!isTypveld(document.activeElement)) document.body.classList.remove("typen"); }, 50));
 
 };
 </script>
