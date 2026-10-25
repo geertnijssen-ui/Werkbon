@@ -2,3 +2,7 @@
 [build]
   publish = "."
   command = ""
+
+# Serverfunctie voor de vertaler (DeepL); de sleutel staat in Netlify als DEEPL_KEY.
+[functions]
+  directory = "netlify/functions"

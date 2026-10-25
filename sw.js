@@ -1,6 +1,6 @@
 /* Werkbon MT Service: offline cache.
    Bij elke nieuwe upload: verhoog VERSIE hier EN const VERSIE in index.html (zelfde nummer). */
-const VERSIE = "werkbon-1.6";
+const VERSIE = "werkbon-1.7";
 const BESTANDEN = [
   "./", "index.html", "manifest.webmanifest", "uren-calc.js", "uren-pdf.js", "uren.js",
   "libs/react.production.min.js", "libs/react-dom.production.min.js",
