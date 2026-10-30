@@ -1,6 +1,6 @@
 /* Werkbon MT Service: offline cache.
-   Bij elke nieuwe upload: verhoog VERSIE hier EN const VERSIE in index.html (zelfde nummer). */
-const VERSIE = "werkbon-1.16";
+   Bij elke nieuwe upload: verhoog VERSIE hier EN const VERSIE in js/basis.js (zelfde nummer). */
+const VERSIE = "werkbon-1.17";
 /* Excel-lezer apart bewaren, zodat hij niet bij elke update opnieuw geladen wordt (oude OCR-cache wordt zo ook gewist) */
 const LIBS = "werkbon-libs-xlsx-0.18.5";
 const BESTANDEN = [
@@ -9,7 +9,6 @@ const BESTANDEN = [
   "js/uren-calc.js", "js/uren-pdf.js", "js/uren.js",
   "libs/react.production.min.js", "libs/react-dom.production.min.js",
   "libs/html2canvas.min.js", "libs/jspdf.umd.min.js",
-  "fonts/barlow-condensed-latin-600-normal.woff2", "fonts/barlow-condensed-latin-700-normal.woff2",
   "fonts/montserrat-latin-600-normal.woff2", "fonts/montserrat-latin-700-normal.woff2", "fonts/inter-latin-400-normal.woff2", "fonts/inter-latin-500-normal.woff2", "fonts/inter-latin-600-normal.woff2",
   "icons/icon-192.png", "icons/icon-512.png", "icons/logo-mt.png"
 ];

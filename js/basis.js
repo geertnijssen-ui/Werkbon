@@ -33,3 +33,6 @@ const DEFAULT_SETTINGS = {
     onderwerp: { nl: "Werkbon", fr: "Bon de travail", de: "Arbeitsschein", en: "Work order", cs: "Pracovní list" },
     mail: { nl: "In bijlage de werkbon.", fr: "Veuillez trouver le bon de travail en annexe.", de: "Anbei der Arbeitsschein.", en: "Please find the work order attached.", cs: "V příloze zasíláme pracovní list." }
 };
+/* versie: samen verhogen met VERSIE in sw.js */
+const VERSIE = "1.17";
+const APP_CODE = "MT2026";
