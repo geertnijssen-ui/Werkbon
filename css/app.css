@@ -573,3 +573,9 @@ h1,.desk .appkop h1,.popup h3{font-weight:800;letter-spacing:-.01em}
 }
 .twee>.veld{min-width:0}
 .twee input{width:100%;min-width:0;max-width:100%}
+.planItem.verlofItem{border-left-color:#4a7fd0}
+.verlof{display:flex;flex-direction:column;gap:8px}
+.verlofKaart,.verlofForm{display:flex;flex-direction:column;gap:6px;padding:14px}
+.verlofRij{display:flex;align-items:flex-start;gap:10px}
+.verlofWie{flex:1;min-width:0;display:flex;flex-direction:column}
+.pil.rood{background:rgba(214,60,50,.15);color:var(--rood)}

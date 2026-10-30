@@ -165,10 +165,10 @@ function App() {
     const [demo, setDemo] = useState(() => !!LS.get("demoBackup"));
     const startDemo = () => {
         if (LS.get("demoBackup")) return;
-        LS.set("demoBackup", { bonnen, klanten, gebruikt, planning: LS.get("planning", []), techniekers: LS.get("techniekers", []), planner: !!settings.planner });
+        LS.set("demoBackup", { bonnen, klanten, gebruikt, planning: LS.get("planning", []), techniekers: LS.get("techniekers", []), verlof: LS.get("verlof", []), goedkeurders: LS.get("goedkeurders", []), planner: !!settings.planner });
         const d = window.maakDemo(settings);
         setBonnen(d.bonnen); setKlanten(d.klanten); setGebruikt(d.gebruikt);
-        LS.set("planning", d.planning); LS.set("techniekers", d.techniekers); LS.set("planTech", "");
+        LS.set("planning", d.planning); LS.set("techniekers", d.techniekers); LS.set("planTech", ""); LS.set("verlof", d.verlof); LS.set("goedkeurders", d.goedkeurders);
         setSettings(s => Object.assign({}, s, { planner: true }));
         setDemo(true); setView("dash"); setMelding("Demo gestart");
     };
@@ -176,7 +176,7 @@ function App() {
         const b = LS.get("demoBackup");
         if (!b) { setDemo(false); return; }
         setBonnen(b.bonnen || []); setKlanten(b.klanten || []); setGebruikt(b.gebruikt || []);
-        LS.set("planning", b.planning || []); LS.set("techniekers", b.techniekers || []); LS.set("planTech", "");
+        LS.set("planning", b.planning || []); LS.set("techniekers", b.techniekers || []); LS.set("planTech", ""); LS.set("verlof", b.verlof || []); LS.set("goedkeurders", b.goedkeurders || []);
         setSettings(s => Object.assign({}, s, { planner: !!b.planner }));
         LS.del("demoBackup");
         setDemo(false); setView("dash"); setMelding("Demo gestopt, je eigen gegevens staan terug");
@@ -374,7 +374,7 @@ function App() {
                 React.createElement("span", { className: "tegelActie" }, urenVandaag ? T.urenAanpassen : T.urenInvullen)),
             settings.planner ? React.createElement("button", { className: "tegel breed", onClick: () => setView("planner") },
                 React.createElement("span", { className: "tegelIc" }, Ic("agenda")),
-                React.createElement("span", { className: "tegelTekst" }, React.createElement("span", null, "Planner"), React.createElement("strong", null, "Agenda en uren facturatie")),
+                React.createElement("span", { className: "tegelTekst" }, React.createElement("span", null, "Planner"), React.createElement("strong", null, "Agenda, verlof en uren facturatie")),
                 React.createElement("span", { className: "tegelActie" }, "Open")) : null),
         gepland.length ? React.createElement("div", { className: "gepland" },
             React.createElement("div", { className: "sectiekop" }, React.createElement("h2", null, "Vandaag gepland")),
@@ -716,8 +716,8 @@ function App() {
             React.createElement("div", { className: "demoBlok" },
                 React.createElement("b", null, "Demo"),
                 React.createElement("p", { className: "klein" }, demo
-                    ? "De demo loopt. Bij stoppen komen je eigen bonnen, klanten en planning terug. Wat je tijdens de demo maakt, wordt dan gewist."
-                    : "Laadt 20 voorbeeldbonnen met fictieve techniekers en klanten, plus een planning. Je eigen bonnen, klanten en planning worden veilig opzij gezet en komen terug als je de demo stopt."),
+                    ? "De demo loopt. Bij stoppen komen je eigen bonnen, klanten, planning en verlof terug. Wat je tijdens de demo maakt, wordt dan gewist."
+                    : "Laadt 20 voorbeeldbonnen met fictieve techniekers en klanten, plus een planning en verlofaanvragen. Je eigen bonnen, klanten en planning worden veilig opzij gezet en komen terug als je de demo stopt."),
                 demo ? React.createElement("button", { className: "btn rood", onClick: stopDemo }, "Demo stoppen")
                     : React.createElement("button", { className: "btn grijs", onClick: startDemo }, "Demo starten")),
             React.createElement("button", { className: "btn grijs", onClick: () => setIntroOpen(true) }, T.uitleg),

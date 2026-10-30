@@ -84,21 +84,23 @@
     }
 
     /* ---------- agenda ---------- */
-    function Agenda({ planning, setPlanning, techs, klanten, desk, startBon, settings }) {
+    function Agenda({ planning, setPlanning, techs, klanten, desk, startBon, settings, verlof }) {
         const [week, setWeek] = useState(() => maandag(vandaag()));
         const [tech, setTech] = useState(() => LS.get("planTech", ""));
         const [form, setForm] = useState(null);
         const [detail, setDetail] = useState(null);
         useEffect(() => { LS.set("planTech", tech); }, [tech]);
         const dagenWeek = Array.from({ length: 7 }, (_, i) => plusDagen(week, i));
-        const zichtbaar = planning.filter(p => !tech || p.tech === tech);
+        /* goedgekeurd verlof staat mee in de agenda */
+        const zichtbaar = planning.concat((verlof || []).map(v => ({ id: "v-" + v.id, tech: v.tech, klant: v.soort, opdracht: v.opm, van: v.van, tot: v.tot || v.van, verlof: true })))
+            .filter(p => !tech || p.tech === tech);
         /* weekend alleen tonen als er iets gepland is */
         const dagen = dagenWeek.filter((d, i) => i < 5 || zichtbaar.some(p => opDag(p, d)));
         const nieuw = (d, t) => setForm({ id: uid(), nieuw: true, tech: t || tech || "", klant: "", klantId: "", adres: "", machine: "", opdracht: "", van: d || vandaag(), tot: d || vandaag(), weekend: false });
         const bewaar = n => { setPlanning(l => l.findIndex(x => x.id === n.id) < 0 ? l.concat([n]) : l.map(x => x.id === n.id ? n : x)); setForm(null); setDetail(null); };
         const wis = p => { if (!window.confirm("Deze planning verwijderen?")) return; setPlanning(l => l.filter(x => x.id !== p.id)); setForm(null); setDetail(null); };
         const vd = vandaag();
-        const Blok = (p, d, metTech) => h("button", { key: p.id + d, className: "planItem", onClick: () => setDetail(p) },
+        const Blok = (p, d, metTech) => h("button", { key: p.id + d, className: "planItem" + (p.verlof ? " verlofItem" : ""), onClick: () => setDetail(p) },
             h("b", null, p.klant),
             p.opdracht || p.machine ? h("small", null, [p.machine, p.opdracht].filter(Boolean).join(" · ")) : null,
             metTech || p.tot !== p.van ? h("span", { className: "planMeta" },
@@ -150,11 +152,12 @@
                     detail.machine ? h("div", null, h("span", { className: "klein" }, "Machine"), h("b", null, detail.machine)) : null,
                     detail.opdracht ? h("div", null, h("span", { className: "klein" }, "Opdracht"), h("b", null, detail.opdracht)) : null,
                     detail.adres ? h("div", null, h("span", { className: "klein" }, "Adres"), h("b", null, detail.adres)) : null),
-                h(NavKnoppen, { adres: detail.adres }),
-                h("button", { className: "btn", onClick: () => { setDetail(null); startBon(detail); } }, "Start werkbon"),
-                h("div", { className: "rijtje" },
-                    h("button", { className: "btn grijs", onClick: () => setForm(detail) }, "Aanpassen"),
-                    h("button", { className: "btn grijs", onClick: () => setDetail(null) }, "Sluiten"))) : null);
+                detail.verlof ? h("button", { className: "btn grijs", onClick: () => setDetail(null) }, "Sluiten") : h(React.Fragment, null,
+                    h(NavKnoppen, { adres: detail.adres }),
+                    h("button", { className: "btn", onClick: () => { setDetail(null); startBon(detail); } }, "Start werkbon"),
+                    h("div", { className: "rijtje" },
+                        h("button", { className: "btn grijs", onClick: () => setForm(detail) }, "Aanpassen"),
+                        h("button", { className: "btn grijs", onClick: () => setDetail(null) }, "Sluiten")))) : null);
     }
 
     /* ---------- uren voor facturatie ---------- */
@@ -217,18 +220,95 @@
                 h("button", { className: "btn", onClick: kopieer }, "Kopieer voor Excel")) : null);
     }
 
+    /* ---------- verlof ---------- */
+    const SOORT_VERLOF = ["Verlof", "Recup", "Klein verlet", "Ziekte"];
+    const STATUS = { wacht: ["In afwachting", "oranje"], ok: ["Goedgekeurd", "groen"], nee: ["Geweigerd", "rood"] };
+    const periode = v => v.tot && v.tot !== v.van ? kort(v.van) + " – " + kort(v.tot) : DAG[datum(v.van).getDay()] + " " + kort(v.van);
+    const werkdagenIn = v => { let n = 0, d = v.van; while (d <= (v.tot || v.van)) { if (!isWeekend(d)) n++; d = plusDagen(d, 1); } return n; };
+    function Verlof({ verlof, setVerlof, techs, settings, setMelding }) {
+        const [goedk, setGoedk] = useState(() => LS.get("goedkeurders", []));
+        useEffect(() => { LS.set("goedkeurders", goedk); }, [goedk]);
+        const ik = settings.techNaam || "";
+        const leeg = () => ({ tech: ik || techs[0] || "", soort: "Verlof", van: plusDagen(vandaag(), 7), tot: plusDagen(vandaag(), 7), opm: "" });
+        const [f, setF] = useState(leeg);
+        const [weiger, setWeiger] = useState(null);
+        const zetF = v => setF(Object.assign({}, f, v));
+        const stuur = () => {
+            if (!f.tech || !f.van) return;
+            setVerlof(l => [{ id: uid(), tech: f.tech, soort: f.soort, van: f.van, tot: f.tot >= f.van ? f.tot : f.van, opm: f.opm, status: "wacht", aangevraagd: new Date().toISOString() }].concat(l));
+            setF(leeg());
+            setMelding(goedk.length ? "Aanvraag verstuurd naar " + goedk.join(", ") : "Aanvraag bewaard");
+        };
+        const beslis = (v, status, reden) => {
+            setVerlof(l => l.map(x => x.id === v.id ? Object.assign({}, x, { status, reden: reden || "", beslist: new Date().toISOString(), door: ik }) : x));
+            /* goedgekeurd verlof van jezelf meteen in je urenregistratie (niet tijdens de demo) */
+            if (status === "ok" && v.tech === ik && !LS.get("demoBackup") && (v.soort === "Verlof" || v.soort === "Recup")) {
+                const uren = Object.assign({}, LS.get("uren", {}));
+                let d = v.van;
+                while (d <= (v.tot || v.van)) { if (!isWeekend(d) && !uren[d]) uren[d] = { soort: v.soort === "Recup" ? "R" : "V", klant: "", opm: v.opm || "", opgeslagen: true }; d = plusDagen(d, 1); }
+                LS.set("uren", uren);
+            }
+            setWeiger(null);
+            setMelding(status === "ok" ? "Goedgekeurd" : "Geweigerd");
+        };
+        const teKeuren = verlof.filter(v => v.status === "wacht").sort((a, b) => a.van.localeCompare(b.van));
+        const besl = verlof.filter(v => v.status !== "wacht").sort((a, b) => b.van.localeCompare(a.van));
+        const Kaart = (v, knoppen) => h("div", { key: v.id, className: "kaart verlofKaart" },
+            h("div", { className: "verlofRij" },
+                h("div", { className: "verlofWie" }, h("b", null, v.tech + " · " + v.soort), h("span", { className: "klein" }, periode(v) + " · " + werkdagenIn(v) + (werkdagenIn(v) === 1 ? " werkdag" : " werkdagen"))),
+                h("span", { className: "pil " + STATUS[v.status][1] }, STATUS[v.status][0])),
+            v.opm ? h("span", { className: "klein" }, v.opm) : null,
+            v.reden ? h("span", { className: "klein" }, "Reden: " + v.reden) : null,
+            knoppen ? h("div", { className: "rijtje" },
+                h("button", { className: "btn grijs", onClick: () => setWeiger({ v, reden: "" }) }, "Weigeren"),
+                h("button", { className: "btn", onClick: () => beslis(v, "ok") }, "Goedkeuren")) : null);
+        return h("div", { className: "verlof" },
+            h("div", { className: "sectiekop" }, h("h2", null, "Te keuren (" + teKeuren.length + ")")),
+            teKeuren.length ? teKeuren.map(v => Kaart(v, true)) : h("p", { className: "leegtekst" }, "Geen openstaande aanvragen."),
+            h("div", { className: "sectiekop" }, h("h2", null, "Verlof aanvragen")),
+            h("div", { className: "kaart verlofForm" },
+                h("div", { className: "twee" },
+                    h("label", { className: "veld" }, h("span", null, "Voor"),
+                        h("select", { id: "vTech", value: f.tech, onChange: e => zetF({ tech: e.target.value }) }, techs.map(t => h("option", { key: t, value: t }, t)))),
+                    h("label", { className: "veld" }, h("span", null, "Soort"),
+                        h("select", { id: "vSoort", value: f.soort, onChange: e => zetF({ soort: e.target.value }) }, SOORT_VERLOF.map(t => h("option", { key: t, value: t }, t))))),
+                h("div", { className: "twee" },
+                    h("label", { className: "veld" }, h("span", null, "Van"), h("input", { id: "vVan", type: "date", value: f.van, onChange: e => zetF({ van: e.target.value, tot: f.tot < e.target.value ? e.target.value : f.tot }) })),
+                    h("label", { className: "veld" }, h("span", null, "Tot en met"), h("input", { id: "vTot", type: "date", value: f.tot, min: f.van, onChange: e => zetF({ tot: e.target.value }) }))),
+                h("label", { className: "veld" }, h("span", null, "Opmerking"), h("input", { id: "vOpm", value: f.opm, onChange: e => zetF({ opm: e.target.value }), placeholder: "bv. herfstvakantie" })),
+                h("button", { className: "btn", disabled: !f.tech || !f.van, onClick: stuur }, "Aanvraag versturen"),
+                h("span", { className: "klein" }, goedk.length ? "Gaat naar: " + goedk.join(", ") : "Kies hieronder wie de aanvragen krijgt.")),
+            h("div", { className: "sectiekop" }, h("h2", null, "Wie keurt verlof goed")),
+            h("div", { className: "kaart" }, techs.map(t => h("label", { key: t, className: "schakel" + (goedk.indexOf(t) >= 0 ? " aan" : "") },
+                h("input", { type: "checkbox", checked: goedk.indexOf(t) >= 0, onChange: e => setGoedk(g => e.target.checked ? g.concat([t]) : g.filter(x => x !== t)) }),
+                h("span", { className: "schakelBol" }), t))),
+            h("p", { className: "klein" }, "Voorlopig staat alles op dit toestel. Na de koppeling met Microsoft 365 krijgen de goedkeurders de aanvraag echt door."),
+            besl.length ? h("div", { className: "sectiekop" }, h("h2", null, "Beslist")) : null,
+            besl.map(v => Kaart(v, false)),
+            weiger ? h(window.Popup, { titel: "Aanvraag weigeren", onSluit: () => setWeiger(null) },
+                h("p", null, weiger.v.tech + " · " + weiger.v.soort + " · " + periode(weiger.v)),
+                h("label", { className: "veld" }, h("span", null, "Reden (optioneel)"), h("input", { id: "vReden", value: weiger.reden, onChange: e => setWeiger(Object.assign({}, weiger, { reden: e.target.value })) })),
+                h("div", { className: "rijtje" },
+                    h("button", { className: "btn grijs", onClick: () => setWeiger(null) }, "Annuleren"),
+                    h("button", { className: "btn rood", onClick: () => beslis(weiger.v, "nee", weiger.reden) }, "Weigeren"))) : null);
+    }
+
     /* ---------- module ---------- */
     function PlannerModule({ onTerug, bonnen, klanten, settings, desk, startBon, setMelding }) {
         const [tab, setTab] = useState("agenda");
         const [planning, setPlanning] = useState(() => LS.get("planning", []));
         useEffect(() => { LS.set("planning", planning); }, [planning]);
+        const [verlof, setVerlof] = useState(() => LS.get("verlof", []));
+        useEffect(() => { LS.set("verlof", verlof); }, [verlof]);
+        const openVerlof = verlof.filter(v => v.status === "wacht").length;
         const techs = useMemo(() => lijstTechniekers(planning, bonnen, settings), [planning, bonnen, settings]);
         return h("div", { className: "scherm planner" },
             h("div", { className: "appkop" },
                 h("button", { className: "terug", onClick: onTerug, "aria-label": "Terug" }, window.Ic("terug")),
                 h("h1", null, "Planner")),
-            h("div", { className: "tabs" }, [["agenda", "Agenda"], ["fact", "Uren facturatie"]].map(([k, l]) => h("button", { key: k, className: "tab" + (tab === k ? " aan" : ""), onClick: () => setTab(k) }, l))),
-            tab === "agenda" ? h(Agenda, { planning, setPlanning, techs, klanten, desk, startBon, settings }) : h(Facturatie, { bonnen, techs, setMelding }));
+            h("div", { className: "tabs" }, [["agenda", "Agenda"], ["verlof", "Verlof" + (openVerlof ? " (" + openVerlof + ")" : "")], ["fact", "Uren facturatie"]].map(([k, l]) => h("button", { key: k, className: "tab" + (tab === k ? " aan" : ""), onClick: () => setTab(k) }, l))),
+            tab === "agenda" ? h(Agenda, { planning, setPlanning, techs, klanten, desk, startBon, settings, verlof: verlof.filter(v => v.status === "ok") })
+                : tab === "verlof" ? h(Verlof, { verlof, setVerlof, techs, settings, setMelding }) : h(Facturatie, { bonnen, techs, setMelding }));
     }
     window.PlannerModule = PlannerModule;
 
@@ -320,6 +400,15 @@
         if (settings && settings.techNaam && TECH.indexOf(settings.techNaam) < 0) {
             planning.push(Object.assign(P(0, 0, 5, 0, 0, 0, "Demo: jouw planning deze week"), { id: "demo-eigen", tech: settings.techNaam }));
         }
-        return { bonnen, klanten, planning, techniekers: TECH, gebruikt: bonnen.map(b => b.nr) };
+        const V = (ti, soort, w, dag, lengte, status, opm, reden) => {
+            const van = plusDagen(ma, w * 7 + dag);
+            return { id: "demo-v" + ti + w + dag, tech: TECH[ti], soort, van, tot: plusDagen(van, lengte - 1), opm, status, reden: reden || "", aangevraagd: plusDagen(ma, -10) + "T09:00:00.000Z" };
+        };
+        const verlof = [
+            V(3, "Verlof", 1, 3, 2, "wacht", "Verlengd weekend"), V(1, "Recup", 2, 4, 1, "wacht", "Vrijdag vrij"), V(4, "Verlof", 7, 0, 5, "wacht", "Kerstvakantie"),
+            V(0, "Verlof", 0, 4, 1, "ok", "Familiefeest"), V(2, "Klein verlet", 1, 2, 1, "ok", "Huwelijk broer"), V(4, "Verlof", 2, 0, 5, "ok", "Herfstvakantie"),
+            V(1, "Verlof", 1, 0, 3, "nee", "Citytrip", "Te druk die week: installatie Kempen Plastics")
+        ];
+        return { bonnen, klanten, planning, verlof, goedkeurders: [settings && settings.techNaam ? settings.techNaam : TECH[0]], techniekers: TECH, gebruikt: bonnen.map(b => b.nr) };
     };
 })();
