@@ -54,6 +54,7 @@
         };
     }
 
+    function heeftEigenPauze(dag) { return !!dag && dag.pauzeMin !== undefined && dag.pauzeMin !== null && dag.pauzeMin !== "" && !isNaN(Number(dag.pauzeMin)); }
     function isGewerkt(dag) { return !!dag && dag.soort === "werk"; }
     function heeftInhoud(dag) { return !!dag && (dag.soort && dag.soort !== "werk" || !!(dag.klant && String(dag.klant).trim())); }
 
@@ -67,7 +68,10 @@
         const R = code === "R";
         const D = true;
         const hotel = !!dag.hotel && !BQ;
-        const pz = dag.pauze || "normaal";
+        /* eigen pauze in minuten (sinds 1.18) vervangt de keuze normaal / geen pauze */
+        const eigen = heeftEigenPauze(dag);
+        const X = eigen ? Number(dag.pauzeMin) / 60 : n.AE;
+        const pz = eigen ? "normaal" : (dag.pauze || "normaal");
         const P = !hotel && pz === "p", PT = !hotel && pz === "pt", HP = hotel && pz === "p", HPT = hotel && pz === "pt";
         const H = hotel && pz === "normaal";
         const AJ = BQ ? 0 : (uurNaarDec(dag.vertrekThuis) || 0);
@@ -77,19 +81,19 @@
 
         const AQ = D && !BQ && AK > 12;
         const AS = D && !BQ && (AK - AJ) > n.AC;
-        const AT = AS ? (AQ ? AK - AJ - n.AC - n.AE : AK - AJ - n.AC) : 0;
+        const AT = AS ? (AQ ? AK - AJ - n.AC - X : AK - AJ - n.AC) : 0;
         const AU = AL <= 12 && AL > 0, AV = AM <= 12 && AM > 0, AX = (AM - AL) > n.AG;
         let AY = 0;
         if (AX) {
             if (AU && AV) AY = AM - AL - n.AG;
-            else if (AU && !AV) AY = AM - AL - n.AG - n.AE;
+            else if (AU && !AV) AY = AM - AL - n.AG - X;
             else if (!AU && !AV) AY = AM - AL - n.AG;
         }
         const AZ = (!PT && !HPT) ? r2(AT + AY) : r2(AT + AY) + n.AE;
         const BC = D && !BQ && AK < 12, BD = AU;
         let BE;
         if (BC && BD) BE = AL - AK;
-        else if (BC && !BD) BE = AL - AK - n.AE;
+        else if (BC && !BD) BE = AL - AK - X;
         else BE = AL - AK;
         const norm = n.AF - n.AD - n.AE;
         let BF;
@@ -144,10 +148,11 @@
             case "F": return opm ? opm : "Feestdag/Jour férier";
         }
         const k = String(dag.klant || "").trim();
-        const pz = dag.pauze || "normaal";
+        const pz = heeftEigenPauze(dag) ? Number(dag.pauzeMin) + "p" : dag.pauze || "normaal";
         if (blad === "cdb") return dag.hotel ? k + " (H)" : k;
-        if (dag.hotel) return k + (pz === "p" ? " (H 0p)" : pz === "pt" ? " (H 0pT)" : " (H)");
-        return k + (pz === "p" ? " (0p)" : pz === "pt" ? " (0pT)" : "");
+        const extra = pz === "p" ? "0p" : pz === "pt" ? "0pT" : pz === "normaal" ? "" : pz;
+        if (dag.hotel) return k + " (H" + (extra ? " " + extra : "") + ")";
+        return k + (extra ? " (" + extra + ")" : "");
     }
 
     function pad(n) { return String(n).padStart(2, "0"); }
@@ -267,5 +272,5 @@
             .map(k => ({ datum: k, klant: dagen[k].klant, hotel: !!dagen[k].hotel }));
     }
 
-    root.UrenCalc = { STD_PARAMS, STD_JAAR, DAGCODES, uurNaarDec, decNaarUmin, berekenDag, label, maand, stat, interventies, weeknum, isoWeekdag, dagenInMaand, isoDatum, heeftInhoud, r2 };
+    root.UrenCalc = { STD_PARAMS, STD_JAAR, DAGCODES, uurNaarDec, decNaarUmin, berekenDag, label, maand, stat, interventies, weeknum, isoWeekdag, dagenInMaand, isoDatum, heeftInhoud, heeftEigenPauze, r2 };
 })(typeof window !== "undefined" ? window : globalThis);

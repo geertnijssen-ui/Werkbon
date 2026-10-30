@@ -70,9 +70,6 @@
 
     /* ---------- kleine bouwstenen ---------- */
     const Veld = (label, input, extra) => h("label", { className: "veld" + (extra ? " " + extra : "") }, h("span", null, label), input);
-    const Tijd = (waarde, zet, id) => h("div", { className: "tijdrij" },
-        h("input", { id, type: "time", value: waarde || "", onChange: e => zet(e.target.value) }),
-        h("button", { type: "button", className: "nuknop", onClick: () => zet(window.nuTijd ? window.nuTijd() : "") }, "Nu"));
     const Num = (waarde, zet, id, ph) => h("input", { id, type: "number", inputMode: "numeric", value: waarde === undefined ? "" : waarde, placeholder: ph || "", onChange: e => zet(e.target.value) });
 
     function Resultaat({ b, dag }) {
@@ -124,6 +121,10 @@
             setGewijzigd(false);
             melding("Dag opgeslagen");
         };
+        /* pauze in minuten: standaard die van het rooster, per dag aan te passen */
+        const stdPauze = String((params.rooster[C.isoWeekdag(datum)] || {}).pauze || 0);
+        const pauzeWaarde = dag.pauzeMin !== undefined && dag.pauzeMin !== null ? String(dag.pauzeMin) : (dag.pauze === "p" || dag.pauze === "pt") ? "0" : stdPauze;
+        const zetPauze = v => { const t = String(v).trim(); zet({ pauzeMin: t === stdPauze ? undefined : t, pauze: "normaal" }); };
         const wissen = () => { zetDag(datum, null); setDag(leegDag()); setGewijzigd(false); melding("Dag gewist"); };
 
         const bonVanDag = (bonnen || []).filter(x => (x.dagen || []).some(d => d.datum === datum));
@@ -158,17 +159,13 @@
                 !String(dag.klant || "").trim() && ietsIngevuld(dag) ? h("p", { className: "waarschuwing" }, "Vul nog een klant in: zonder klant telt deze dag niet mee in de berekening.") : null,
                 Veld("Klant", h("input", { id: "uKlant", list: "urenKlanten", value: dag.klant, onChange: e => zet({ klant: e.target.value }), placeholder: "Naam klant of omschrijving" })),
                 h("datalist", { id: "urenKlanten" }, (klanten || []).map(k => h("option", { key: k.id || k.naam, value: k.naam }))),
-                h("div", { className: "urenTwee2" },
-                    Veld("Pauze", h("select", { id: "uPauze", value: dag.pauze || "normaal", onChange: e => zet({ pauze: e.target.value }) },
-                        [["normaal", "Normale pauze"], ["p", "Geen pauze"], ["pt", "Geen pauze tijdens traject"]].map(([k, l]) => h("option", { key: k, value: k }, l)))),
-                    h("label", { className: "schakel" + (dag.hotel ? " aan" : "") },
-                        h("input", { type: "checkbox", checked: !!dag.hotel, onChange: e => zet({ hotel: e.target.checked }) }),
-                        h("span", { className: "schakelBol" }), "Hotel (geen dagvergoeding)")),
+                h("div", { className: "tijdlijn" },
+                    [["vertrekThuis", "Vertrek", "thuis", "uT1"], ["aankomstKlant", "Start", "bij klant", "uT2"], ["vertrekKlant", "Stop", "bij klant", "uT3"], ["aankomstThuis", "Thuis", "aankomst", "uT4"]].map(([k, l, sub, id]) =>
+                        h("div", { key: k, className: "tijdlijnStap" },
+                            h("label", { htmlFor: id }, h("b", null, l), h("small", null, sub)),
+                            h("input", { id, type: "time", value: dag[k] || "", onChange: e => zet({ [k]: e.target.value }) }),
+                            h("button", { type: "button", className: "nuknop", onClick: () => zet({ [k]: window.nuTijd ? window.nuTijd() : "" }) }, "Nu")))),
                 h("div", { className: "dagvelden" },
-                    h("label", null, "Vertrek thuis", Tijd(dag.vertrekThuis, v => zet({ vertrekThuis: v }), "uT1")),
-                    h("label", null, "Aankomst klant", Tijd(dag.aankomstKlant, v => zet({ aankomstKlant: v }), "uT2")),
-                    h("label", null, "Vertrek klant", Tijd(dag.vertrekKlant, v => zet({ vertrekKlant: v }), "uT3")),
-                    h("label", null, "Thuis", Tijd(dag.aankomstThuis, v => zet({ aankomstThuis: v }), "uT4")),
                     h("label", null, "Km vertrek", Num(dag.kmStart, v => zet({ kmStart: v }), "uK1", vorigeKm ? String(vorigeKm) : "")),
                     h("label", null, "Km thuis", Num(dag.kmEind, v => zet({ kmEind: v }), "uK2"))),
                 [["kmStart", vorigeKm, "je vorige km-stand"], ["kmEind", dag.kmStart, "de km bij vertrek"]].map(([veld, ref, wat]) => {
@@ -176,7 +173,15 @@
                     return w ? h("div", { key: veld, className: "kmWaarsch" },
                         h("b", null, veld === "kmStart" ? "Km vertrek nakijken" : "Km thuis nakijken"), h("span", null, w),
                         h("button", { className: "btn grijs", onClick: () => zet({ kmOk: Object.assign({}, dag.kmOk, { [veld]: dag[veld] }) }) }, "Klopt (bv. nieuwe auto)")) : null;
-                })
+                }),
+                h("div", { className: "urenTwee2 pauzeRij" },
+                    h("label", { className: "veld pauzeVeld" }, h("span", null, "Pauze (min)"),
+                        h("div", { className: "pauzeIn" },
+                            h("input", { id: "uPauze", type: "number", inputMode: "numeric", min: 0, step: 5, value: pauzeWaarde, onChange: e => zetPauze(e.target.value) }),
+                            pauzeWaarde !== stdPauze ? h("button", { type: "button", className: "nuknop", onClick: () => zetPauze(stdPauze) }, "Standaard " + stdPauze) : null)),
+                    h("label", { className: "schakel" + (dag.hotel ? " aan" : "") },
+                        h("input", { type: "checkbox", checked: !!dag.hotel, onChange: e => zet({ hotel: e.target.checked }) }),
+                        h("span", { className: "schakelBol" }), "Hotel (geen dagvergoeding)"))
             ) : Veld(dag.soort === "F" ? "Naam feestdag (bv. Pasen)" : "Opmerking (bv. brugdag)", h("input", { id: "uOpm", value: dag.opm || "", onChange: e => zet({ opm: e.target.value }) })),
             h(Resultaat, { b, dag }),
             h("div", { className: "rijtje" },
