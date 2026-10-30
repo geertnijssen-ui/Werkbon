@@ -1,6 +1,6 @@
 /* Werkbon MT Service: offline cache.
    Bij elke nieuwe upload: verhoog VERSIE hier EN const VERSIE in js/basis.js (zelfde nummer). */
-const VERSIE = "werkbon-1.17";
+const VERSIE = "werkbon-1.18";
 /* Excel-lezer apart bewaren, zodat hij niet bij elke update opnieuw geladen wordt (oude OCR-cache wordt zo ook gewist) */
 const LIBS = "werkbon-libs-xlsx-0.18.5";
 const BESTANDEN = [
