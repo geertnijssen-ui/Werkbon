@@ -504,8 +504,5 @@ h1,.desk .appkop h1,.popup h3{font-weight:800;letter-spacing:-.01em}
 .tijdlijnStap input::-webkit-date-and-time-value{text-align:center}
 .tijdlijnStap .nuknop{height:34px;padding:0;border-radius:10px;font-size:13px}
 .tijdlijnStap:nth-child(2) input,.tijdlijnStap:nth-child(3) input{border-color:var(--acc)}
-.pauzeIn{display:flex;gap:6px}
-.pauzeIn input{flex:1;min-width:0}
-.pauzeIn .nuknop{border-radius:var(--r-veld);font-size:13px;white-space:nowrap}
 .pauzeRij{margin-top:4px}
 @media (min-width:1000px){.tijdlijn{gap:12px}}

@@ -124,6 +124,8 @@
         /* pauze in minuten: standaard die van het rooster, per dag aan te passen */
         const stdPauze = String((params.rooster[C.isoWeekdag(datum)] || {}).pauze || 0);
         const pauzeWaarde = dag.pauzeMin !== undefined && dag.pauzeMin !== null ? String(dag.pauzeMin) : (dag.pauze === "p" || dag.pauze === "pt") ? "0" : stdPauze;
+        /* keuze per 5 minuten, tot 2 uur */
+        const pauzeKeuzes = Array.from({ length: 25 }, (_, i) => String(i * 5)).concat([stdPauze, pauzeWaarde]).filter((x, i, l) => x !== "" && l.indexOf(x) === i).sort((x, y) => x - y);
         const zetPauze = v => { const t = String(v).trim(); zet({ pauzeMin: t === stdPauze ? undefined : t, pauze: "normaal" }); };
         const wissen = () => { zetDag(datum, null); setDag(leegDag()); setGewijzigd(false); melding("Dag gewist"); };
 
@@ -176,9 +178,8 @@
                 }),
                 h("div", { className: "urenTwee2 pauzeRij" },
                     h("label", { className: "veld pauzeVeld" }, h("span", null, "Pauze (min)"),
-                        h("div", { className: "pauzeIn" },
-                            h("input", { id: "uPauze", type: "number", inputMode: "numeric", min: 0, step: 5, value: pauzeWaarde, onChange: e => zetPauze(e.target.value) }),
-                            pauzeWaarde !== stdPauze ? h("button", { type: "button", className: "nuknop", onClick: () => zetPauze(stdPauze) }, "Standaard " + stdPauze) : null)),
+                        h("select", { id: "uPauze", value: pauzeWaarde, onChange: e => zetPauze(e.target.value) },
+                            pauzeKeuzes.map(m => h("option", { key: m, value: m }, m + " min")))),
                     h("label", { className: "schakel" + (dag.hotel ? " aan" : "") },
                         h("input", { type: "checkbox", checked: !!dag.hotel, onChange: e => zet({ hotel: e.target.checked }) }),
                         h("span", { className: "schakelBol" }), "Hotel (geen dagvergoeding)"))
