@@ -42,7 +42,7 @@ async function nieuw(b, init) {
     /* 2. uren: een dag zonder klant blijft bewaard als je naar een andere dag gaat */
     p = await nieuw(b);
     await p.click(".tbItem >> text=Uren"); await p.waitForTimeout(300);
-    await p.fill("#uT1", "07:00"); await p.fill("#uK1", "1000");
+    await p.selectOption("#uT1", "07:00"); await p.fill("#uK1", "1000");
     await p.click('[aria-label="Vorige dag"]'); await p.waitForTimeout(200);
     await p.fill("#uKlant", "Klant gisteren");
     await p.click('[aria-label="Volgende dag"]'); await p.waitForTimeout(200);

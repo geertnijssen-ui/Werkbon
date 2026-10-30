@@ -124,6 +124,26 @@
         /* pauze in minuten: standaard die van het rooster, per dag aan te passen */
         const stdPauze = String((params.rooster[C.isoWeekdag(datum)] || {}).pauze || 0);
         const pauzeWaarde = dag.pauzeMin !== undefined && dag.pauzeMin !== null ? String(dag.pauzeMin) : (dag.pauze === "p" || dag.pauze === "pt") ? "0" : stdPauze;
+        /* tijden per kwartier in 24 u; de lege keuze staat bij het normale uur, zodat de lijst daar opent */
+        const rooster = params.rooster[C.isoWeekdag(datum)] || {};
+        const normaalUur = { vertrekThuis: rooster.vertrekThuis, aankomstKlant: rooster.aankomstKlant, vertrekKlant: rooster.vertrekKlant, aankomstThuis: rooster.thuis };
+        const tijdWaarde = t => /^\d{1,2}:\d{2}$/.test(t || "") ? t.padStart(5, "0") : "";
+        const kwartierLijst = (huidig, normaal) => {
+            const l = Array.from({ length: 96 }, (_, i) => String(Math.floor(i / 4)).padStart(2, "0") + ":" + String(i % 4 * 15).padStart(2, "0"));
+            if (huidig && l.indexOf(huidig) < 0) l.push(huidig); /* oude tijd zoals 07:23 blijft zichtbaar */
+            l.sort();
+            const n = tijdWaarde(normaal) || "08:00";
+            const pos = l.findIndex(t => t >= n);
+            l.splice(pos < 0 ? l.length : pos, 0, "");
+            return l;
+        };
+        /* Nu: vertrek naar het kwartier ervoor, thuiskomst naar het kwartier erna, de rest naar het dichtste kwartier */
+        const kwartierVan = k => {
+            const d = new Date(), m = d.getHours() * 60 + d.getMinutes();
+            const r = k === "vertrekThuis" ? Math.floor(m / 15) * 15 : k === "aankomstThuis" ? Math.ceil(m / 15) * 15 : Math.round(m / 15) * 15;
+            const q = Math.min(r, 24 * 60 - 15);
+            return String(Math.floor(q / 60)).padStart(2, "0") + ":" + String(q % 60).padStart(2, "0");
+        };
         /* keuze per 5 minuten, tot 2 uur */
         const pauzeKeuzes = Array.from({ length: 25 }, (_, i) => String(i * 5)).concat([stdPauze, pauzeWaarde]).filter((x, i, l) => x !== "" && l.indexOf(x) === i).sort((x, y) => x - y);
         const zetPauze = v => { const t = String(v).trim(); zet({ pauzeMin: t === stdPauze ? undefined : t, pauze: "normaal" }); };
@@ -165,8 +185,16 @@
                     [["vertrekThuis", "Vertrek", "thuis", "uT1"], ["aankomstKlant", "Start", "bij klant", "uT2"], ["vertrekKlant", "Stop", "bij klant", "uT3"], ["aankomstThuis", "Thuis", "aankomst", "uT4"]].map(([k, l, sub, id]) =>
                         h("div", { key: k, className: "tijdlijnStap" },
                             h("label", { htmlFor: id }, h("b", null, l), h("small", null, sub)),
-                            h("input", { id, type: "time", value: dag[k] || "", onChange: e => zet({ [k]: e.target.value }) }),
-                            h("button", { type: "button", className: "nuknop", onClick: () => zet({ [k]: window.nuTijd ? window.nuTijd() : "" }) }, "Nu")))),
+                            h("select", { id, value: tijdWaarde(dag[k]), onChange: e => zet({ [k]: e.target.value }) },
+                                kwartierLijst(tijdWaarde(dag[k]), normaalUur[k]).map(t => h("option", { key: t || "leeg", value: t }, t || "--:--"))),
+                            h("button", { type: "button", className: "nuknop", onClick: () => zet({ [k]: kwartierVan(k) }) }, "Nu")))),
+                h("div", { className: "urenTwee2 pauzeRij" },
+                    h("label", { className: "veld pauzeVeld" }, h("span", null, "Pauze (min)"),
+                        h("select", { id: "uPauze", value: pauzeWaarde, onChange: e => zetPauze(e.target.value) },
+                            pauzeKeuzes.map(m => h("option", { key: m, value: m }, m + " min")))),
+                    h("label", { className: "schakel" + (dag.hotel ? " aan" : "") },
+                        h("input", { type: "checkbox", checked: !!dag.hotel, onChange: e => zet({ hotel: e.target.checked }) }),
+                        h("span", { className: "schakelBol" }), "Hotel (geen dagvergoeding)")),
                 h("div", { className: "dagvelden" },
                     h("label", null, "Km vertrek", Num(dag.kmStart, v => zet({ kmStart: v }), "uK1", vorigeKm ? String(vorigeKm) : "")),
                     h("label", null, "Km thuis", Num(dag.kmEind, v => zet({ kmEind: v }), "uK2"))),
@@ -175,14 +203,7 @@
                     return w ? h("div", { key: veld, className: "kmWaarsch" },
                         h("b", null, veld === "kmStart" ? "Km vertrek nakijken" : "Km thuis nakijken"), h("span", null, w),
                         h("button", { className: "btn grijs", onClick: () => zet({ kmOk: Object.assign({}, dag.kmOk, { [veld]: dag[veld] }) }) }, "Klopt (bv. nieuwe auto)")) : null;
-                }),
-                h("div", { className: "urenTwee2 pauzeRij" },
-                    h("label", { className: "veld pauzeVeld" }, h("span", null, "Pauze (min)"),
-                        h("select", { id: "uPauze", value: pauzeWaarde, onChange: e => zetPauze(e.target.value) },
-                            pauzeKeuzes.map(m => h("option", { key: m, value: m }, m + " min")))),
-                    h("label", { className: "schakel" + (dag.hotel ? " aan" : "") },
-                        h("input", { type: "checkbox", checked: !!dag.hotel, onChange: e => zet({ hotel: e.target.checked }) }),
-                        h("span", { className: "schakelBol" }), "Hotel (geen dagvergoeding)"))
+                })
             ) : Veld(dag.soort === "F" ? "Naam feestdag (bv. Pasen)" : "Opmerking (bv. brugdag)", h("input", { id: "uOpm", value: dag.opm || "", onChange: e => zet({ opm: e.target.value }) })),
             h(Resultaat, { b, dag }),
             h("div", { className: "rijtje" },

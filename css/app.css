@@ -499,10 +499,8 @@ h1,.desk .appkop h1,.popup h3{font-weight:800;letter-spacing:-.01em}
 .tijdlijnStap label{display:flex;flex-direction:column;line-height:1.15;padding-left:2px}
 .tijdlijnStap label b{font-size:14px;font-weight:800;color:var(--tekst)}
 .tijdlijnStap label small{font-size:11px;color:var(--zacht);font-weight:600}
-.tijdlijnStap input{width:100%;min-width:0;height:46px;padding:0 2px;font:inherit;font-size:16px;font-weight:700;letter-spacing:-.02em;text-align:center;color:var(--tekst);background:var(--bg);border:1px solid var(--lijn);border-radius:var(--r-veld);-webkit-appearance:none;appearance:none}
-.tijdlijnStap input::-webkit-calendar-picker-indicator{display:none}
-.tijdlijnStap input::-webkit-date-and-time-value{text-align:center}
+.tijdlijnStap select{width:100%;min-width:0;height:46px;padding:0 2px;font:inherit;font-size:16px;font-weight:700;text-align:center;text-align-last:center;color:var(--tekst);background:var(--bg);border:1px solid var(--lijn);border-radius:var(--r-veld);-webkit-appearance:none;appearance:none;font-variant-numeric:tabular-nums}
 .tijdlijnStap .nuknop{height:34px;padding:0;border-radius:10px;font-size:13px}
-.tijdlijnStap:nth-child(2) input,.tijdlijnStap:nth-child(3) input{border-color:var(--acc)}
-.pauzeRij{margin-top:4px}
+.tijdlijnStap:nth-child(2) select,.tijdlijnStap:nth-child(3) select{border-color:var(--acc)}
+.pauzeRij{margin:0 0 4px}
 @media (min-width:1000px){.tijdlijn{gap:12px}}
