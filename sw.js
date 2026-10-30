@@ -4,7 +4,9 @@ const VERSIE = "werkbon-1.16";
 /* Excel-lezer apart bewaren, zodat hij niet bij elke update opnieuw geladen wordt (oude OCR-cache wordt zo ook gewist) */
 const LIBS = "werkbon-libs-xlsx-0.18.5";
 const BESTANDEN = [
-  "./", "index.html", "manifest.webmanifest", "uren-calc.js", "uren-pdf.js", "uren.js",
+  "./", "index.html", "manifest.webmanifest", "css/app.css",
+  "js/opslag.js", "js/basis.js", "js/talen.js", "js/bon-pdf.js", "js/onderdelen.js", "js/app.js",
+  "js/uren-calc.js", "js/uren-pdf.js", "js/uren.js",
   "libs/react.production.min.js", "libs/react-dom.production.min.js",
   "libs/html2canvas.min.js", "libs/jspdf.umd.min.js",
   "fonts/barlow-condensed-latin-600-normal.woff2", "fonts/barlow-condensed-latin-700-normal.woff2",
