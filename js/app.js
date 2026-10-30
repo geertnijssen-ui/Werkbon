@@ -8,6 +8,8 @@ function App() {
         if (st.bonTaal === "en") st.bonTaal = "nl";
         st.onderwerp = Object.assign({}, DEFAULT_SETTINGS.onderwerp, st.onderwerp);
         st.mail = Object.assign({}, DEFAULT_SETTINGS.mail, st.mail);
+        /* weergave volgt de instelling (ook na terugzetten van een back-up) */
+        if (st.thema && st.thema !== window.__thema && window.zetThema) window.zetThema(st.thema);
         return st;
     });
     const [klanten, setKlanten] = useState(() => (LS.get("klanten", []) || []).map(k => Object.assign({}, k, { emails: k.emails || (k.email ? [k.email] : []) })));
@@ -297,9 +299,6 @@ function App() {
     const urenVandaag = ((window.WBStore && window.WBStore.cache.wb_uren) || {})[vandaagIso];
     const dezeMaand = bonnen.filter(b => String(b.gemaakt || "").slice(0, 7) === vandaagIso.slice(0, 7) || (b.dagen || []).some(d => (d.datum || "").slice(0, 7) === vandaagIso.slice(0, 7))).length;
     const teVerzenden = bonnen.filter(x => x.teVerzenden).length;
-    const Kpi = (getal, label, accent, klik) => React.createElement(klik ? "button" : "div", { className: "kpi" + (accent ? " accent" : ""), onClick: klik || undefined },
-        React.createElement("span", null, label),
-        React.createElement("b", null, getal));
     const BonRij = b => React.createElement("button", { key: b.id, className: "bonrij", onClick: () => { setBon(b); setView("acties"); } },
         React.createElement("span", { className: "nr" }, b.nr),
         React.createElement("span", { className: "wie" },
@@ -307,28 +306,35 @@ function App() {
             React.createElement("small", null, [bonDatum(b) ? bonDatum(b).split("-").reverse().join("/") : "", b.machineNaam].filter(Boolean).join(" · "))),
         React.createElement("span", { className: "pil " + (b.afgetekend ? "groen" : "oranje") }, b.afgetekend ? T.getekend : T.open),
         Ic("pijl", "pijl"));
-    const dashboard = (React.createElement("div", { className: "scherm" },
-        desk ? null : Kop(settings.bedrijfsnaam, null),
-        React.createElement("div", { className: "groet" },
-            React.createElement("h2", null, groet + (settings.techNaam ? ", " + settings.techNaam.split(" ")[0] : "")),
-            React.createElement("span", null, nu.toLocaleDateString({ nl: "nl-BE", fr: "fr-BE", en: "en-GB", cs: "cs-CZ" }[settings.appTaal] || "nl-BE", { weekday: "long", day: "numeric", month: "long" }))),
-        React.createElement("div", { className: "kpis" },
-            Kpi(bonnen.filter(b => !b.afgetekend).length, T.openBonnen, false, () => { setFilter("open"); setView("lijst"); }),
-            Kpi(teVerzenden, T.teVerzenden, teVerzenden > 0, null),
-            Kpi(dezeMaand, T.dezeMaand, false, null)),
+    /* beginscherm in tegelstijl: oranje band met groet, tegels schuiven er half over */
+    const urenTekst = urenVandaag && (urenVandaag.vertrekThuis || urenVandaag.klant)
+        ? [urenVandaag.vertrekThuis && urenVandaag.aankomstThuis ? urenVandaag.vertrekThuis + " – " + urenVandaag.aankomstThuis : urenVandaag.vertrekThuis, urenVandaag.klant].filter(Boolean).join(" · ")
+        : T.geenUren;
+    const dashboard = (React.createElement("div", { className: "scherm dash" },
+        React.createElement("div", { className: "band" },
+            desk ? null : React.createElement("div", { className: "bandTop" },
+                React.createElement("span", { className: "tekstlogo" }, React.createElement("b", null, "MT"), " service"),
+                taalKeuze),
+            React.createElement("div", { className: "groet" },
+                React.createElement("h2", null, groet + (settings.techNaam ? ", " + settings.techNaam.split(" ")[0] : "")),
+                React.createElement("span", null, nu.toLocaleDateString({ nl: "nl-BE", fr: "fr-BE", en: "en-GB", cs: "cs-CZ" }[settings.appTaal] || "nl-BE", { weekday: "long", day: "numeric", month: "long" })))),
+        React.createElement("div", { className: "tegels" },
+            React.createElement("button", { className: "tegel hoofd", onClick: () => setView("taal") },
+                React.createElement("span", null, T.openBonnen),
+                React.createElement("b", null, bonnen.filter(b => !b.afgetekend).length),
+                React.createElement("em", null, Ic("plus"), T.nieuw)),
+            React.createElement("button", { className: "tegel" + (teVerzenden > 0 ? " let" : ""), onClick: () => { setFilter("alle"); setView("lijst"); } },
+                React.createElement("span", null, T.teVerzenden), React.createElement("b", null, teVerzenden)),
+            React.createElement("button", { className: "tegel", onClick: () => { setFilter("alle"); setView("lijst"); } },
+                React.createElement("span", null, T.dezeMaand), React.createElement("b", null, dezeMaand)),
+            React.createElement("button", { className: "tegel breed", onClick: () => setView("uren") },
+                React.createElement("span", { className: "tegelIc" }, Ic("klok")),
+                React.createElement("span", { className: "tegelTekst" }, React.createElement("span", null, T.vandaag), React.createElement("strong", null, urenTekst)),
+                React.createElement("span", { className: "tegelActie" }, urenVandaag ? T.urenAanpassen : T.urenInvullen))),
         teVerzenden > 0 ? React.createElement("div", { className: "wachtblok" },
             React.createElement("b", null, T.wachtTitel + " (" + bonnen.filter(x => x.teVerzenden).length + ")"),
             online ? bonnen.filter(x => x.teVerzenden).map(x => React.createElement("button", { key: x.id, className: "btn", onClick: () => deelBon(x) }, T.verzendNu + " N° " + x.nr + (x.klantNaam ? " · " + x.klantNaam : "")))
                 : React.createElement("span", { className: "klein" }, T.wachtOffline)) : null,
-        React.createElement("button", { className: "btn groot", onClick: () => setView("taal") }, Ic("plus"), T.nieuw),
-        React.createElement("div", { className: "kaart vandaag" },
-            React.createElement("div", { className: "kaartIc" }, Ic("klok")),
-            React.createElement("div", { className: "kaartTekst" },
-                React.createElement("b", null, T.vandaag),
-                React.createElement("span", null, urenVandaag && (urenVandaag.vertrekThuis || urenVandaag.klant)
-                    ? [urenVandaag.klant, urenVandaag.vertrekThuis && urenVandaag.aankomstThuis ? urenVandaag.vertrekThuis + " – " + urenVandaag.aankomstThuis : urenVandaag.vertrekThuis].filter(Boolean).join(" · ")
-                    : T.geenUren)),
-            React.createElement("button", { className: "btn klein grijs", onClick: () => setView("uren") }, urenVandaag ? T.urenAanpassen : T.urenInvullen)),
         React.createElement("div", { className: "sectiekop" },
             React.createElement("h2", null, T.recent),
             bonnen.length ? React.createElement("button", { className: "linkknop", onClick: () => setView("lijst") }, T.allesBekijken) : null),
@@ -648,6 +654,9 @@ function App() {
             React.createElement("label", { className: "schakel" + (settings.groot ? " aan" : "") },
                 React.createElement("input", { type: "checkbox", checked: !!settings.groot, onChange: e => zetS({ groot: e.target.checked }) }),
                 React.createElement("span", { className: "schakelBol" }), T.grootLetters),
+            React.createElement("div", { className: "veld" },
+                React.createElement("span", null, T.weergave),
+                React.createElement("div", { className: "taalrij" }, [["auto", T.wAuto], ["licht", T.wLicht], ["donker", T.wDonker]].map(([k, l]) => React.createElement("button", { key: k, className: "tog" + ((settings.thema || "auto") === k ? " aan" : ""), onClick: () => { zetS({ thema: k }); window.zetThema(k); } }, l)))),
             React.createElement("button", { className: "btn grijs", onClick: () => setIntroOpen(true) }, T.uitleg),
             React.createElement("div", { className: "veld" },
                 React.createElement("span", null, T.handtekening),

@@ -31,9 +31,7 @@
 .dagvelden select{width:100%;height:46px;padding:8px 10px;font-size:15px;background:var(--paneel);color:var(--tekst);border:1px solid var(--lijn);border-radius:8px}
 .wachtblok{padding:12px;margin:10px 0}
 .wachtblok b{display:block;margin-bottom:6px}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){--bg:#15181b; --paneel:#1f2326; --tekst:#eceef0; --zacht:#a0a6ad; --lijn:#343a40}
-}
+:root.donker{--bg:#15181b; --paneel:#1f2326; --tekst:#eceef0; --zacht:#a0a6ad; --lijn:#343a40}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
 body{background:var(--bg);color:var(--tekst);font-size:16px;line-height:1.45}
@@ -199,10 +197,7 @@ h2{font-family:Montserrat,Inter,sans-serif}
   .dagvelden{grid-template-columns:repeat(3,1fr)}
 }
 /* ================= huisstijl MT Service (v1.10) ================= */
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){--bg:#121417; --paneel:#1c1f23; --tekst:#eceef0; --zacht:#9aa1a9; --lijn:#2c3136; --grijs:#3a4046; --acc-zacht:#3a2a17; --groen-zacht:#173325; --schaduw:none}
-}
-:root[data-theme="dark"]{--tekst:#eceef0;--zacht:#9aa1a9;--grijs:#3a4046;--acc-zacht:#3a2a17;--groen-zacht:#173325;--schaduw:none}
+:root.donker{--bg:#121417; --paneel:#1c1f23; --tekst:#eceef0; --zacht:#9aa1a9; --lijn:#2c3136; --grijs:#3a4046; --acc-zacht:#3a2a17; --groen-zacht:#173325; --schaduw:none}
 body{font-family:Inter,system-ui,-apple-system,"Segoe UI",Arial,sans-serif;-webkit-font-smoothing:antialiased}
 .ic{width:20px;height:20px;flex:0 0 auto}
 h1,h2,.popup h3,.stat b,.bonrij .nr,.dagtotaal{font-family:Inter,system-ui,sans-serif}
@@ -318,10 +313,7 @@ button.kpi{cursor:pointer}
 }
 /* stijl van mtservice.be: Montserrat-titels, vlakke grijze kaarten, hoekige vormen, oranje pijl-accenten */
 :root{--grijs-donker:#6f747b;--acc:#f68f1e;--acc-dark:#c86d0a;--acc-tekst:#1d1f22;--acc-zacht:#fef1e2;--antraciet:#24282c;--antraciet2:#2f3439;--tekst:#1d2125;--zacht:#6b7178;--grijs:#c3c8ce;--groen:#1f7a47;--groen-zacht:#e5f4eb;--rood:#b3261e;--bg:#ffffff;--paneel:#f2f2f2;--lijn:#e3e3e3;--radius:4px;--schaduw:none;--kaartlijn:transparent}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){--bg:#141619; --paneel:#1f2226; --lijn:#2e3237}
-}
-:root[data-theme="dark"]{--bg:#141619; --paneel:#1f2226; --lijn:#2e3237}
+:root.donker{--bg:#141619; --paneel:#1f2226; --lijn:#2e3237}
 h1,.groet h2,.kpi b,.desk .appkop h1,.popup h3,.zbItem,.tbItem span,.btn,.kaartTekst b{font-family:Montserrat,Inter,sans-serif}
 h1,.desk .appkop h1{font-weight:700}
 .groet h2{font-weight:700;letter-spacing:-.01em}
@@ -423,4 +415,81 @@ body.typen .tabbalk{display:none}
 .btn.rood:active{background:var(--rood);color:#fff}
 @media (min-width:1000px){
   .urenDag{max-width:900px}
+}
+/* ================= stijl Tegels (v1.18): oranje band, witte tegels, Plus Jakarta Sans ================= */
+@font-face{font-family:"Plus Jakarta Sans";font-weight:400;font-display:swap;src:url(../fonts/plus-jakarta-sans-latin-400-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Plus Jakarta Sans";font-weight:600;font-display:swap;src:url(../fonts/plus-jakarta-sans-latin-600-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Plus Jakarta Sans";font-weight:800;font-display:swap;src:url(../fonts/plus-jakarta-sans-latin-800-normal.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+/* latin-ext: Tsjechische letters (č, ř, ů, ...) */
+@font-face{font-family:"Plus Jakarta Sans";font-weight:400;font-display:swap;src:url(../fonts/plus-jakarta-sans-latin-ext-400-normal.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Plus Jakarta Sans";font-weight:600;font-display:swap;src:url(../fonts/plus-jakarta-sans-latin-ext-600-normal.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Plus Jakarta Sans";font-weight:800;font-display:swap;src:url(../fonts/plus-jakarta-sans-latin-ext-800-normal.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+:root{--bg:#f2f1ef;--paneel:#ffffff;--veld:#ffffff;--lijn:#e4e1dd;--kaartlijn:transparent;--tekst:#211f1d;--zacht:#76716c;--zwart:#211f1d;--tegel-schaduw:0 6px 16px -12px rgba(60,30,0,.35);--r-tegel:18px;--r-knop:14px;--r-veld:12px;--band:#f68f1e;--band-tekst:#211f1d}
+:root.donker{--bg:#16181a;--paneel:#24282c;--veld:#1c1f22;--lijn:#353a3f;--tekst:#eef0f2;--zacht:#a2a8ae;--zwart:#0e0f10;--tegel-schaduw:none;--acc-zacht:#3a2a17}
+body,button,input,select,textarea{font-family:"Plus Jakarta Sans",Inter,system-ui,sans-serif}
+h1,h2,.groet h2,.popup h3,.zbItem,.tbItem span,.btn,.kaartTekst b,.desk .appkop h1{font-family:"Plus Jakarta Sans",Inter,system-ui,sans-serif}
+h1,.desk .appkop h1,.popup h3{font-weight:800;letter-spacing:-.01em}
+/* kopbalk: oranje merkband */
+.appkop{background:var(--band);color:var(--band-tekst)}
+.appkop h1{color:var(--band-tekst)}
+.appkop .terug{color:var(--band-tekst)}
+.appkop .terug:active{background:rgba(0,0,0,.08)}
+.appkop .taalmenu{border-color:rgba(33,31,29,.35);color:var(--band-tekst)}
+/* kaarten en tegels */
+.bonrij .open,.kaart,.infoblok,.dagkaart,.urenRes,.urenLijst,.zoekfilters,.tekenzone,.totaalbalk,.stat,.wachtblok,.machineKaart,.kpi{border-radius:var(--r-tegel);border:none;box-shadow:var(--tegel-schaduw);background:var(--paneel)}
+.dagkaart{border:none!important}
+.bonrij .open{padding:12px 14px}
+.wis{border-radius:var(--r-knop);border:none;box-shadow:var(--tegel-schaduw)}
+.leegkaart{border-radius:var(--r-tegel);background:var(--paneel);border:1px dashed var(--lijn)}
+.wachtblok{border-left:none;background:var(--acc-zacht)}
+/* knoppen */
+.btn{border-radius:var(--r-knop);font-weight:800;letter-spacing:0}
+.btn.grijs{background:var(--paneel);border:1px solid var(--lijn);box-shadow:none}
+.btn.rood{border-radius:var(--r-knop)}
+.tog{border-radius:12px;background:var(--paneel);border:1px solid var(--lijn)}
+.tog.aan{background:var(--zwart);border-color:var(--zwart);color:#fff}
+.tabs{border-radius:16px;background:var(--paneel);box-shadow:var(--tegel-schaduw)}
+.tab{border-radius:12px}
+.tab.aan{background:var(--zwart);color:#fff;box-shadow:none}
+/* invoervelden */
+.veld input,.veld textarea,.veld select,.zoekbalk input,.zoekblok input,.dagvelden input,.dagvelden select,.dagkaart input,.dagkaart select,.tijdrij.kwartier select,.urenDatumMidden input{background:var(--veld);border:1px solid var(--lijn);border-radius:var(--r-veld)}
+.dagkaart input,.dagkaart select,.dagkaart .tijdrij.kwartier select{background:var(--bg)}
+/* onderste balk */
+.tabbalk{background:var(--paneel);border-top:none;box-shadow:0 -6px 18px -14px rgba(0,0,0,.4)}
+.tbItem.aan{color:var(--acc)}
+/* beginscherm */
+.dash .band{background:var(--band);color:var(--band-tekst);margin:0 -14px;padding:calc(10px + env(safe-area-inset-top, 0px)) 14px 58px;display:flex;flex-direction:column;gap:10px}
+.dash .bandTop{display:flex;justify-content:space-between;align-items:center;min-height:36px}
+.tekstlogo{font-weight:800;font-size:22px;letter-spacing:-.02em;color:#3d2204;line-height:1}
+.tekstlogo b{color:#fff}
+.dash .taalmenu{border-color:rgba(33,31,29,.35);color:var(--band-tekst)}
+.dash .groet{margin:6px 0 0}
+.dash .groet h2{font-size:24px;font-weight:800;color:var(--band-tekst);letter-spacing:-.01em}
+.dash .groet span{color:#5a3407;font-weight:600}
+.tegels{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:-46px 0 6px;position:relative}
+.tegel{display:flex;flex-direction:column;justify-content:space-between;gap:8px;min-height:84px;padding:14px;border:none;border-radius:var(--r-tegel);background:var(--paneel);color:var(--tekst);box-shadow:var(--tegel-schaduw);text-align:left;font:inherit;cursor:pointer}
+.tegel>span{font-size:13px;color:var(--zacht);font-weight:600}
+.tegel b{font-size:30px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.tegel.hoofd{grid-row:span 2;background:var(--zwart);color:#fff}
+.tegel.hoofd>span{color:#c4beb8}
+.tegel.hoofd b{font-size:52px}
+.tegel.hoofd em{font-style:normal;font-weight:800;color:var(--acc);display:flex;align-items:center;gap:4px;font-size:15px}
+.tegel.hoofd em .ic{width:18px;height:18px}
+.tegel.let b{color:var(--acc-dark)}
+.tegel.breed{grid-column:1/-1;flex-direction:row;align-items:center;gap:12px;min-height:0}
+.tegel .tegelIc{width:42px;height:42px;border-radius:13px;background:var(--zwart);color:var(--acc);display:flex;align-items:center;justify-content:center;flex:none}
+.tegelTekst{flex:1;min-width:0;display:flex;flex-direction:column}
+.tegelTekst span{font-size:13px;color:var(--zacht);font-weight:600}
+.tegelTekst strong{color:var(--tekst);font-size:16px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tegel .tegelActie{font-size:13px;font-weight:800;color:var(--acc-dark)}
+.tegel:active{transform:scale(.98)}
+.tegel:focus-visible,.btn:focus-visible{outline:3px solid rgba(246,143,30,.5);outline-offset:2px}
+.dash .sectiekop h2{margin-top:18px}
+:root.donker .tegel.let b,:root.donker .tegel .tegelActie{color:#ffad55}
+@media (min-width:1000px){
+  .dash .band{margin:0 0 0;border-radius:var(--r-tegel);padding:22px 22px 66px}
+  .tegels{grid-template-columns:repeat(4,1fr);margin:-48px 18px 10px}
+  .tegel.hoofd{grid-row:span 1}
+  .tegel.breed{grid-column:span 1;flex-direction:column;align-items:flex-start}
+  .tegelTekst strong{white-space:normal}
 }

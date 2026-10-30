@@ -11,6 +11,17 @@
 <meta name="apple-mobile-web-app-title" content="Werkbon">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="stylesheet" href="css/app.css">
+<script>
+/* licht of donker: keuze uit Instellingen, "auto" volgt de gsm. Vroeg toepassen zodat het scherm niet flitst. */
+(function(){
+  var mq = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+  function pas(){ var k = window.__thema || "auto"; var d = k === "donker" || (k === "auto" && mq && mq.matches); document.documentElement.classList.toggle("donker", !!d); }
+  window.zetThema = function(k){ window.__thema = k || "auto"; try { localStorage.setItem("wb_thema", window.__thema); } catch(e){} pas(); };
+  var k; try { k = localStorage.getItem("wb_thema"); } catch(e){}
+  window.__thema = k || "auto"; pas();
+  if(mq){ if(mq.addEventListener) mq.addEventListener("change", pas); else if(mq.addListener) mq.addListener(pas); }
+})();
+</script>
 </head>
 <body>
 <div id="root"></div>
