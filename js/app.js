@@ -141,6 +141,46 @@ function App() {
         setStap(1);
         setView("wizard");
     };
+    /* werkbon starten vanuit de planning: klant, machine en opdracht al ingevuld */
+    const startBon = (p) => {
+        const nr = vrijNummer();
+        if (nr === null) { setMelding(T.nrOp); return; }
+        const k = klanten.find(x => x.id === p.klantId) || klanten.find(x => x.naam === p.klant);
+        const m = k && (k.machines || []).find(x => x.naam === p.machine);
+        const vd = new Date().toISOString().slice(0, 10);
+        setBon({
+            id: uid(), nr: nr, taal: settings.bonTaal || "nl", contractnr: "", bestelnr: "", contact: "", email: k && (k.emails || [])[0] || "",
+            klantId: k ? k.id : "", klantNaam: k ? k.naam : p.klant, klantStraat: k ? k.straat : p.adres || "", klantStad: k ? k.stad : "",
+            machineNaam: m ? m.naam : p.machine || "", machineMerk: m ? m.merk || "" : "", machineSerie: m ? m.serienr || "" : "",
+            beschrijving: p.opdracht || "", opmerkingen: "", fotos: [],
+            dagen: [{ datum: vd >= p.van && vd <= (p.tot || p.van) ? vd : p.van, begin: "", einde: "", pauze: settings.pauzeMin, supplUren: "", supplKm: "" }],
+            matBestelJa: null, matBestelTxt: "", matGelevJa: null, matGelevTxt: "", beeindigd: null,
+            tech1: p.tech || settings.techNaam, tech2: "", klantTekenNaam: "", klantEmail: "", klantSig: "",
+            afgetekend: false, gemaakt: new Date().toISOString()
+        });
+        setStap(1);
+        setView("wizard");
+    };
+    /* demo: eigen gegevens opzij zetten en voorbeeldgegevens laden; bij stoppen alles terugzetten */
+    const [demo, setDemo] = useState(() => !!LS.get("demoBackup"));
+    const startDemo = () => {
+        if (LS.get("demoBackup")) return;
+        LS.set("demoBackup", { bonnen, klanten, gebruikt, planning: LS.get("planning", []), techniekers: LS.get("techniekers", []), planner: !!settings.planner });
+        const d = window.maakDemo(settings);
+        setBonnen(d.bonnen); setKlanten(d.klanten); setGebruikt(d.gebruikt);
+        LS.set("planning", d.planning); LS.set("techniekers", d.techniekers); LS.set("planTech", "");
+        setSettings(s => Object.assign({}, s, { planner: true }));
+        setDemo(true); setView("dash"); setMelding("Demo gestart");
+    };
+    const stopDemo = () => {
+        const b = LS.get("demoBackup");
+        if (!b) { setDemo(false); return; }
+        setBonnen(b.bonnen || []); setKlanten(b.klanten || []); setGebruikt(b.gebruikt || []);
+        LS.set("planning", b.planning || []); LS.set("techniekers", b.techniekers || []); LS.set("planTech", "");
+        setSettings(s => Object.assign({}, s, { planner: !!b.planner }));
+        LS.del("demoBackup");
+        setDemo(false); setView("dash"); setMelding("Demo gestopt, je eigen gegevens staan terug");
+    };
     /* delen / afdrukken */
     const kopieerNaarKlembord = async (tekst) => {
         if (!tekst)
@@ -299,6 +339,7 @@ function App() {
     const urenVandaag = ((window.WBStore && window.WBStore.cache.wb_uren) || {})[vandaagIso];
     const dezeMaand = bonnen.filter(b => String(b.gemaakt || "").slice(0, 7) === vandaagIso.slice(0, 7) || (b.dagen || []).some(d => (d.datum || "").slice(0, 7) === vandaagIso.slice(0, 7))).length;
     const teVerzenden = bonnen.filter(x => x.teVerzenden).length;
+    const gepland = view === "dash" && window.planningVandaag ? window.planningVandaag(settings.techNaam) : [];
     const BonRij = b => React.createElement("button", { key: b.id, className: "bonrij", onClick: () => { setBon(b); setView("acties"); } },
         React.createElement("span", { className: "nr" }, b.nr),
         React.createElement("span", { className: "wie" },
@@ -330,7 +371,19 @@ function App() {
             React.createElement("button", { className: "tegel breed", onClick: () => setView("uren") },
                 React.createElement("span", { className: "tegelIc" }, Ic("klok")),
                 React.createElement("span", { className: "tegelTekst" }, React.createElement("span", null, T.vandaag), React.createElement("strong", null, urenTekst)),
-                React.createElement("span", { className: "tegelActie" }, urenVandaag ? T.urenAanpassen : T.urenInvullen))),
+                React.createElement("span", { className: "tegelActie" }, urenVandaag ? T.urenAanpassen : T.urenInvullen)),
+            settings.planner ? React.createElement("button", { className: "tegel breed", onClick: () => setView("planner") },
+                React.createElement("span", { className: "tegelIc" }, Ic("agenda")),
+                React.createElement("span", { className: "tegelTekst" }, React.createElement("span", null, "Planner"), React.createElement("strong", null, "Agenda en uren facturatie")),
+                React.createElement("span", { className: "tegelActie" }, "Open")) : null),
+        gepland.length ? React.createElement("div", { className: "gepland" },
+            React.createElement("div", { className: "sectiekop" }, React.createElement("h2", null, "Vandaag gepland")),
+            gepland.map(p => React.createElement("div", { key: p.id, className: "kaart geplandKaart" },
+                React.createElement("b", null, p.klant),
+                React.createElement("span", { className: "klein" }, [p.machine, p.opdracht].filter(Boolean).join(" · ")),
+                p.adres ? React.createElement("span", { className: "klein" }, p.adres) : null,
+                React.createElement(window.NavKnoppen, { adres: p.adres }),
+                React.createElement("button", { className: "btn", onClick: () => startBon(p) }, "Start werkbon")))) : null,
         teVerzenden > 0 ? React.createElement("div", { className: "wachtblok" },
             React.createElement("b", null, T.wachtTitel + " (" + bonnen.filter(x => x.teVerzenden).length + ")"),
             online ? bonnen.filter(x => x.teVerzenden).map(x => React.createElement("button", { key: x.id, className: "btn", onClick: () => deelBon(x) }, T.verzendNu + " N° " + x.nr + (x.klantNaam ? " · " + x.klantNaam : "")))
@@ -657,6 +710,16 @@ function App() {
             React.createElement("div", { className: "veld" },
                 React.createElement("span", null, T.weergave),
                 React.createElement("div", { className: "taalrij" }, [["auto", T.wAuto], ["licht", T.wLicht], ["donker", T.wDonker]].map(([k, l]) => React.createElement("button", { key: k, className: "tog" + ((settings.thema || "auto") === k ? " aan" : ""), onClick: () => { zetS({ thema: k }); window.zetThema(k); } }, l)))),
+            React.createElement("label", { className: "schakel" + (settings.planner ? " aan" : "") },
+                React.createElement("input", { type: "checkbox", checked: !!settings.planner, onChange: e => zetS({ planner: e.target.checked }) }),
+                React.createElement("span", { className: "schakelBol" }), "Planner-functies (agenda en uren voor facturatie)"),
+            React.createElement("div", { className: "demoBlok" },
+                React.createElement("b", null, "Demo"),
+                React.createElement("p", { className: "klein" }, demo
+                    ? "De demo loopt. Bij stoppen komen je eigen bonnen, klanten en planning terug. Wat je tijdens de demo maakt, wordt dan gewist."
+                    : "Laadt 20 voorbeeldbonnen met fictieve techniekers en klanten, plus een planning. Je eigen bonnen, klanten en planning worden veilig opzij gezet en komen terug als je de demo stopt."),
+                demo ? React.createElement("button", { className: "btn rood", onClick: stopDemo }, "Demo stoppen")
+                    : React.createElement("button", { className: "btn grijs", onClick: startDemo }, "Demo starten")),
             React.createElement("button", { className: "btn grijs", onClick: () => setIntroOpen(true) }, T.uitleg),
             React.createElement("div", { className: "veld" },
                 React.createElement("span", null, T.handtekening),
@@ -828,9 +891,10 @@ function App() {
                         setCodeFout(true);
                 } }, T.codeKnop)));
     }
-    const MENU = [["dash", "huis", T.dash, ["dash"]], ["taal", "plus", T.nieuw, ["taal", "wizard"]], ["lijst", "bon", T.bonnen, ["lijst", "acties", "preview", "tekenvol"]], ["uren", "klok", T.uren2, ["uren"]], ["setup", "instel", T.setup, ["setup"]]];
+    const MENU = [["dash", "huis", T.dash, ["dash"]], ["taal", "plus", T.nieuw, ["taal", "wizard"]], ["lijst", "bon", T.bonnen, ["lijst", "acties", "preview", "tekenvol"]], ["uren", "klok", T.uren2, ["uren"]]]
+        .concat(settings.planner ? [["planner", "agenda", "Planner", ["planner"]]] : []).concat([["setup", "instel", T.setup, ["setup"]]]);
     const MOBMENU = [["dash", "huis", T.dash, ["dash"]], ["lijst", "bon", T.bonnen, ["lijst", "acties"]], ["taal", "plus", T.nieuwKort, []], ["uren", "klok", T.urenKort, ["uren"]], ["setup", "instel", T.setup, ["setup"]]];
-    const metTabbalk = !desk && ["dash", "lijst", "uren", "setup", "acties"].indexOf(view) >= 0;
+    const metTabbalk = !desk && ["dash", "lijst", "uren", "setup", "acties", "planner"].indexOf(view) >= 0;
     const tabbalk = metTabbalk ? React.createElement("nav", { className: "tabbalk" + (settings.groot ? " groot" : "") }, MOBMENU.map(([v, ic, lbl, actief]) => React.createElement("button", { key: v, className: "tbItem" + (v === "taal" ? " nieuw" : "") + (actief.indexOf(view) >= 0 ? " aan" : ""), onClick: () => setView(v) },
         Ic(ic), React.createElement("span", null, lbl)))) : null;
     const zijbalk = desk ? React.createElement("aside", { className: "zijbalk" },
@@ -844,6 +908,7 @@ function App() {
     return (React.createElement("div", { className: desk ? "desk" : "" }, zijbalk, React.createElement("div", { className: "app v-" + view + (metTabbalk ? " metTabbalk" : "") + (settings.groot ? " groot" : ""), ref: top },
         introOpen ? React.createElement(Intro, { T, onKlaar: () => { LS.set("introGezien", true); setIntroOpen(false); } }) : null,
         !online ? React.createElement("div", { className: "netbalk" }, T.offline) : null,
+        demo ? React.createElement("div", { className: "demobalk" }, React.createElement("span", null, React.createElement("b", null, "DEMO"), " · voorbeeldgegevens"), React.createElement("button", { onClick: stopDemo }, "Stoppen")) : null,
         view === "dash" && dashboard,
         view === "lijst" && lijst,
         view === "taal" && taalkeuze,
@@ -852,6 +917,7 @@ function App() {
         view === "tekenvol" && tekenVol,
         view === "acties" && acties,
         view === "setup" && setup,
+        view === "planner" && window.PlannerModule ? React.createElement(window.PlannerModule, { onTerug: () => setView("dash"), bonnen, klanten, settings, desk, startBon, setMelding }) : null,
         view === "uren" && window.UrenModule ? React.createElement(window.UrenModule, { onTerug: () => setView("dash"), bonnen, klanten, settings, setMelding, setBezig }) : null,
         popups,
         melding ? React.createElement("div", { className: "toast" }, melding) : null,

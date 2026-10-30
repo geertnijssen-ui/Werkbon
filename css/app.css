@@ -504,3 +504,72 @@ h1,.desk .appkop h1,.popup h3{font-weight:800;letter-spacing:-.01em}
 .tijdlijnStap:nth-child(2) select,.tijdlijnStap:nth-child(3) select{border-color:var(--acc)}
 .pauzeRij{margin:0 0 4px}
 @media (min-width:1000px){.tijdlijn{gap:12px}}
+/* planner: agenda per week en uren voor facturatie (v1.18) */
+.planKop{display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:12px}
+.planTech{width:100%;height:46px;padding:0 12px;font:inherit;font-size:16px;font-weight:700;color:var(--tekst);background:var(--veld);border:1px solid var(--lijn);border-radius:var(--r-veld)}
+.planWeek{display:flex;align-items:center;gap:6px;background:var(--paneel);border-radius:var(--r-tegel);padding:4px;box-shadow:var(--tegel-schaduw)}
+.planWeek .terug{color:var(--tekst)}
+.planWeekTekst{flex:1;display:flex;flex-direction:column;align-items:center;background:none;border:none;font:inherit;color:var(--tekst);cursor:pointer;padding:4px}
+.planWeekTekst b{font-size:16px;font-weight:800}
+.planWeekTekst span{font-size:13px;color:var(--zacht);font-weight:600}
+.planDagen{display:flex;flex-direction:column;gap:10px}
+.planDag{background:var(--paneel);border-radius:var(--r-tegel);padding:10px 12px;box-shadow:var(--tegel-schaduw);display:flex;flex-direction:column;gap:6px}
+.planDag.isVandaag{outline:2px solid var(--acc)}
+.planDagKop{display:flex;align-items:center;gap:8px}
+.planDagKop b{flex:1;font-size:15px}
+.planDagKop .linkknop{font-size:22px;line-height:1;padding:0 6px}
+.planLeeg{margin:0;font-size:13px;color:var(--zacht)}
+.planItem{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;font:inherit;color:var(--tekst);background:var(--bg);border:none;border-left:4px solid var(--acc);border-radius:10px;padding:8px 10px;cursor:pointer;min-width:0}
+.planItem b{font-size:14px;font-weight:800;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.planItem small{font-size:12px;color:var(--zacht);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.planMeta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:2px}
+.planPeriode{font-size:11px;font-weight:700;color:var(--zacht)}
+.planRasterHouder{overflow-x:auto;background:var(--paneel);border-radius:var(--r-tegel);box-shadow:var(--tegel-schaduw)}
+.planRaster{display:grid;min-width:760px}
+.planCel{border-right:1px solid var(--lijn);border-bottom:1px solid var(--lijn);padding:6px;display:flex;flex-direction:column;gap:4px;min-height:64px;min-width:0}
+.planCel.leeg{cursor:copy}
+.planCel.leeg:hover{background:var(--acc-zacht)}
+.planCel.kopCel{min-height:0;font-size:13px;color:var(--zacht);text-transform:capitalize;justify-content:center}
+.planCel.kopCel b{color:var(--tekst)}
+.planCel.isVandaag{background:var(--acc-zacht)}
+.planCel.techCel{font-weight:800;font-size:14px;justify-content:center}
+.planDetail{display:grid;gap:8px;margin-bottom:12px}
+.planDetail>div{display:flex;flex-direction:column}
+.navKnoppen{display:flex;gap:8px;margin:6px 0}
+.navKnoppen .btn{flex:1;text-decoration:none;text-align:center}
+.btn.waze{background:#33ccff;color:#05202b}
+.twee{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.factFilters{display:grid;grid-template-columns:1fr 1fr;gap:0 8px}
+.factLijst{display:flex;flex-direction:column;gap:8px}
+.factBon{display:flex;align-items:center;gap:10px;background:var(--paneel);border-radius:var(--r-tegel);padding:12px 14px;box-shadow:var(--tegel-schaduw);cursor:pointer}
+.factBon.aan{outline:2px solid var(--acc)}
+.factBon input{width:22px;height:22px;accent-color:var(--acc);flex:none}
+.factBon .nr{font-weight:800;font-variant-numeric:tabular-nums;min-width:48px}
+.factBon .wie{flex:1;min-width:0;display:flex;flex-direction:column;font-weight:600}
+.factBon .wie small{color:var(--zacht);font-weight:400;font-size:12px}
+.factUren{font-variant-numeric:tabular-nums;font-size:16px}
+.factTotaal{margin-top:14px;background:var(--paneel);border-radius:var(--r-tegel);padding:12px;box-shadow:var(--tegel-schaduw);display:flex;flex-direction:column;gap:12px}
+.factTabelHouder{overflow-x:auto}
+.factTabel{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums;min-width:620px}
+.factTabel th{text-align:left;color:var(--zacht);font-weight:800;font-size:12px;padding:6px;border-bottom:1px solid var(--lijn)}
+.factTabel td{white-space:nowrap;padding:6px;border-bottom:1px solid var(--lijn)}
+.factTabel .getal{text-align:right;font-weight:700}
+.factTabel tfoot td{font-weight:800;border-bottom:none;padding-top:8px}
+.factSom{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.factSom>div{background:var(--zwart);color:#fff;border-radius:14px;padding:10px 12px;display:flex;flex-direction:column}
+.factSom span{font-size:12px;color:#c4beb8;font-weight:600}
+.factSom b{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums}
+.gepland{display:flex;flex-direction:column;gap:8px}
+.geplandKaart{display:flex;flex-direction:column;gap:4px;padding:14px}
+.geplandKaart .btn{margin-top:4px}
+.demoBlok{background:var(--acc-zacht);border-radius:var(--r-tegel);padding:14px;margin:12px 0;display:flex;flex-direction:column;gap:6px}
+.demoBlok p{margin:0}
+.demobalk{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--zwart);color:#fff;font-size:13px;padding:6px 14px}
+.demobalk b{color:var(--acc)}
+.demobalk button{font:inherit;font-weight:800;font-size:13px;background:var(--acc);color:#211f1d;border:none;border-radius:10px;padding:5px 12px;cursor:pointer}
+@media (min-width:1000px){
+  .planKop{grid-template-columns:260px 1fr auto;align-items:center}
+  .factFilters{grid-template-columns:repeat(4,1fr)}
+}
+.twee>.veld{min-width:0}
+.twee input{width:100%;min-width:0;max-width:100%}

@@ -52,7 +52,7 @@ function laad(urls, klaar){
 laad(["libs/react.production.min.js"], function(){
   laad(["libs/react-dom.production.min.js"], function(){
     /* uren-module en app, in deze volgorde */
-    var reeks = ["js/uren-calc.js", "js/uren-pdf.js", "js/uren.js", "js/basis.js", "js/talen.js", "js/bon-pdf.js", "js/onderdelen.js", "js/app.js"];
+    var reeks = ["js/uren-calc.js", "js/uren-pdf.js", "js/uren.js", "js/basis.js", "js/talen.js", "js/bon-pdf.js", "js/onderdelen.js", "js/planner.js", "js/app.js"];
     (function volgende(i){
       if(i >= reeks.length){
         WBStore.init().then(function(){

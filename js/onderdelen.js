@@ -328,7 +328,8 @@ const ICONEN = {
     kopie: ["M9 9h11v11H9z", "M5 15H4V4h11v1"],
     zoek: ["c:11,11,7", "m20 20-3.5-3.5"],
     filter: ["M3 5h18l-7 8v6l-4-2v-4z"],
-    verzend: ["M22 2 11 13", "M22 2 15 22l-4-9-9-4z"]
+    verzend: ["M22 2 11 13", "M22 2 15 22l-4-9-9-4z"],
+    agenda: ["M4 6h16v14H4z", "M4 10h16", "M8 3v4", "M16 3v4"]
 };
 window.Ic = Ic;
 function Ic(naam, cls) {

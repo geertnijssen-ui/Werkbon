@@ -5,7 +5,7 @@ const VERSIE = "werkbon-1.17";
 const LIBS = "werkbon-libs-xlsx-0.18.5";
 const BESTANDEN = [
   "./", "index.html", "manifest.webmanifest", "css/app.css",
-  "js/opslag.js", "js/basis.js", "js/talen.js", "js/bon-pdf.js", "js/onderdelen.js", "js/app.js",
+  "js/opslag.js", "js/basis.js", "js/talen.js", "js/bon-pdf.js", "js/onderdelen.js", "js/planner.js", "js/app.js",
   "js/uren-calc.js", "js/uren-pdf.js", "js/uren.js",
   "libs/react.production.min.js", "libs/react-dom.production.min.js",
   "libs/html2canvas.min.js", "libs/jspdf.umd.min.js",
