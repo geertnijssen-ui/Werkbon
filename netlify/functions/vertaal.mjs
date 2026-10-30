@@ -1,7 +1,7 @@
 /* Vertaler voor de werkbon-app: stuurt de tekst door naar DeepL.
    De DeepL-sleutel staat als omgevingsvariabele DEEPL_KEY in Netlify (Site configuration > Environment variables),
    zodat ze niet in de app zelf zit. */
-const TALEN = { nl: "NL", fr: "FR", de: "DE", en: "EN-GB" };
+const TALEN = { nl: "NL", fr: "FR", de: "DE", en: "EN-GB", cs: "CS" };
 
 const antwoord = (status, data) => new Response(JSON.stringify(data), { status, headers: { "content-type": "application/json" } });
 

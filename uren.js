@@ -87,24 +87,6 @@
     }
 
     /* ---------- dagscherm ---------- */
-    /* ---------- km-teller scannen: km + tijd (vertrek: kwartier ervoor, thuis: kwartier erna) ---------- */
-    const kwartier = (d, omhoog) => {
-        let m = d.getHours() * 60 + d.getMinutes() + (d.getSeconds() > 0 && omhoog ? 1 : 0);
-        m = omhoog ? Math.ceil(m / 15) * 15 : Math.floor(m / 15) * 15;
-        if (m >= 24 * 60) m = 24 * 60 - 15;
-        return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
-    };
-    /* alle getallen van 3 tot 7 cijfers (ook "123 456"), de beste eerst: net boven de vorige km-stand */
-    function kmKandidaten(teksten, vorige) {
-        const set = [];
-        teksten.forEach(t => {
-            const schoon = String(t).replace(/[OoDQ]/g, "0").replace(/[Il|]/g, "1").replace(/[Ss]/g, "5").replace(/B/g, "8");
-            (schoon.match(/\d{1,3}(?:[ .'’]\d{3})+|\d{3,7}/g) || []).forEach(x => { const n = Number(x.replace(/\D/g, "")); if (n >= 100 && n < 10000000 && set.indexOf(n) < 0) set.push(n); });
-        });
-        const v = Number(vorige) || 0;
-        const score = n => v ? (n >= v && n - v <= 3000 ? n - v : n >= v ? 100000 + (n - v) : 1000000 + (v - n)) : -n;
-        return set.sort((a, b) => score(a) - score(b));
-    }
     /* km-controle: te laag, veel te hoog of een cijfer te veel/te weinig */
     function kmCheck(km, ref, wat) {
         const n = Number(km), r = Number(ref);
@@ -116,95 +98,28 @@
         return "";
     }
     window.kmCheck = kmCheck;
-    function KmScan({ moment, vorigeKm, melding, onKlaar, onSluit }) {
-        const [fase, setFase] = useState("start");
-        const [info, setInfo] = useState("");
-        const [km, setKm] = useState("");
-        const [tijd, setTijd] = useState("");
-        const [kand, setKand] = useState([]);
-        const [foto, setFoto] = useState("");
-        const vertrek = moment === "vertrek";
-        const lees = async file => {
-            /* tijd van de foto zelf (bij een foto van vandaag), anders nu */
-            const ft = file.lastModified && Math.abs(Date.now() - file.lastModified) < 12 * 3600 * 1000 ? new Date(file.lastModified) : new Date();
-            setTijd(kwartier(ft, !vertrek));
-            setFoto(URL.createObjectURL(file));
-            setFase("bezig"); setInfo("Teller lezen…");
-            try {
-                const teksten = await window.ocrFoto(file, { alleen: "0123456789 .'kmKM", ookNegatief: true, voortgang: p => setInfo("Teller lezen… " + p + "%") });
-                const k = kmKandidaten(teksten, vorigeKm);
-                setKand(k.slice(0, 8));
-                setKm(k.length ? String(k[0]) : "");
-                setInfo(k.length ? "" : "Geen km-stand gevonden: typ hem zelf in of neem een scherpere foto.");
-            } catch (e) { setInfo("Lezen mislukt: typ de km-stand zelf in."); }
-            setFase("klaar");
-        };
-        const [ok, setOk] = useState("");
-        const waarsch = ok === km ? "" : kmCheck(km, vorigeKm, vertrek ? "je vorige km-stand" : "de km bij vertrek");
-        return h("div", { className: "overlay", onClick: onSluit },
-            h("div", { className: "popup", onClick: e => e.stopPropagation() },
-                h("h3", null, vertrek ? "Vertrek: km-teller scannen" : "Thuis: km-teller scannen"),
-                fase === "start" ? h("p", { className: "klein" }, "Neem een foto van de km-teller op je dashboard. De app leest de km-stand; de tijd neemt hij van je gsm (" + (vertrek ? "vertrek: het kwartier ervoor" : "thuis: het volgende kwartier") + ").") : null,
-                foto ? h("img", { className: "scanfoto", src: foto, alt: "" }) : null,
-                fase === "bezig" ? h("div", { className: "scanbezig" }, h("span", { className: "draaier" }), info) : (info ? h("p", { className: "waarschuwing" }, info) : null),
-                fase === "klaar" ? h(React.Fragment, null,
-                    Veld(vertrek ? "Km vertrek" : "Km thuis", h("input", { id: "kmScanVeld", type: "number", inputMode: "numeric", value: km, onChange: e => setKm(e.target.value) })),
-                    h("p", { className: "klein" }, (vertrek ? "Vertrek thuis: " : "Thuis: ") + tijd),
-                    waarsch ? h("div", { className: "kmWaarsch" },
-                        h("b", null, "Klopt deze km-stand?"), h("span", null, waarsch),
-                        h("div", { className: "rijtje" },
-                            h("button", { className: "btn grijs", onClick: () => { const el = document.getElementById("kmScanVeld"); if (el) el.focus(); } }, "Aanpassen"),
-                            h("button", { className: "btn", onClick: () => setOk(km) }, "Klopt (bv. nieuwe auto)"))) : null,
-                    kand.length > 1 ? h(React.Fragment, null,
-                        h("p", { className: "klein" }, "Ander getal gelezen? Tik erop:"),
-                        h("div", { className: "scanstukjes" }, kand.map(n => h("button", { key: n, type: "button", className: "chip" + (String(n) === km ? " aan" : ""), onClick: () => setKm(String(n)) }, String(n))))) : null) : null,
-                fase !== "bezig" ? h("label", { className: "btn" + (fase === "klaar" ? " grijs" : "") }, window.Ic ? window.Ic("camera") : null, fase === "klaar" ? "Nieuwe foto" : "Foto nemen",
-                    h("input", { type: "file", accept: "image/*", capture: "environment", style: { display: "none" }, onChange: e => { const f = e.target.files && e.target.files[0]; e.target.value = ""; if (f) lees(f); } })) : null,
-                fase === "klaar" ? h("div", { className: "rijtje" },
-                    h("button", { className: "btn grijs", onClick: onSluit }, "Annuleren"),
-                    h("button", { className: "btn", disabled: !!waarsch, onClick: () => onKlaar(km, tijd, ok === km && !!km) }, "Invullen")) : h("button", { className: "btn grijs", onClick: onSluit }, "Annuleren")));
-    }
-
-    /* start/stop vanaf het beginscherm: scan opslaan in de dag van vandaag */
-    const vorigeKmVoor = (dagen, datum) => {
-        const k = Object.keys(dagen).filter(x => x < datum && dagen[x] && dagen[x].kmEind !== "" && dagen[x].kmEind !== undefined).sort().pop();
-        return k ? dagen[k].kmEind : "";
-    };
-    window.KmScan = KmScan;
-    window.urenScan = {
-        vorigeKm: (moment) => { const d = lees("uren", {}), v = vandaag(); return moment === "thuis" && d[v] && d[v].kmStart ? d[v].kmStart : vorigeKmVoor(d, v); },
-        opslaan: (moment, km, tijd, bevestigd) => {
-            const alle = Object.assign({}, lees("uren", {})), v = vandaag();
-            const dag = Object.assign(leegDag(), alle[v] || {});
-            if (moment === "vertrek") { dag.soort = "werk"; if (km) dag.kmStart = km; if (tijd) dag.vertrekThuis = tijd; }
-            else { if (km) dag.kmEind = km; if (tijd) dag.aankomstThuis = tijd; if (dag.kmStart === "") dag.kmStart = vorigeKmVoor(alle, v); }
-            if (bevestigd) dag.kmOk = Object.assign({}, dag.kmOk, { [moment === "vertrek" ? "kmStart" : "kmEind"]: km });
-            alle[v] = Object.assign(dag, { opgeslagen: false });
-            bewaar("uren", alle);
-        }
-    };
-
     function DagScherm({ datum, setDatum, dagen, zetDag, params, bonnen, klanten, melding }) {
         const opgeslagen = dagen[datum];
         const [dag, setDag] = useState(() => Object.assign(leegDag(), opgeslagen || {}));
         const [gewijzigd, setGewijzigd] = useState(false);
-        const [scan, setScan] = useState("");
         const b = useMemo(() => C.berekenDag(dag, datum, params), [dag, datum, params]);
 
         const vorigeKm = useMemo(() => {
             const k = Object.keys(dagen).filter(x => x < datum && dagen[x] && dagen[x].kmEind !== "" && dagen[x].kmEind !== undefined).sort().pop();
             return k ? dagen[k].kmEind : "";
         }, [dagen, datum]);
+        /* ook een dag met alleen tijden of km (nog zonder klant) moet bewaard blijven */
+        const ietsIngevuld = d => C.heeftInhoud(d) || ["klant", "opm", "kmStart", "kmEind", "vertrekThuis", "aankomstKlant", "vertrekKlant", "aankomstThuis"].some(k => d[k] !== undefined && String(d[k]).trim() !== "");
         /* elke wijziging wordt meteen tussentijds bewaard, zodat niets verloren gaat */
         const zet = (velden) => {
             const n = Object.assign({}, dag, velden);
             if (n.soort === "werk" && (n.kmStart === "" || n.kmStart === undefined) && vorigeKm !== "" && !("kmStart" in velden)) n.kmStart = vorigeKm;
             setDag(n);
             setGewijzigd(true);
-            zetDag(datum, C.heeftInhoud(n) ? Object.assign({}, n, { opgeslagen: false }) : null);
+            zetDag(datum, ietsIngevuld(n) ? Object.assign({}, n, { opgeslagen: false }) : null);
         };
         const opslaan = () => {
-            if (!C.heeftInhoud(dag)) { melding("Vul eerst een klant of een soort dag in"); return; }
+            if (!ietsIngevuld(dag)) { melding("Vul eerst iets in"); return; }
             zetDag(datum, Object.assign({}, dag, { opgeslagen: true, opgeslagenOp: new Date().toISOString() }));
             setGewijzigd(false);
             melding("Dag opgeslagen");
@@ -225,7 +140,7 @@
             zet({ soort: "werk", klant: namen.join(" / ") || dag.klant, aankomstKlant: begins[0] || dag.aankomstKlant, vertrekKlant: eindes[eindes.length - 1] || dag.vertrekKlant });
             melding(bonVanDag.length > 1 ? "Overgenomen van " + bonVanDag.length + " werkbonnen: begin " + (begins[0] || "?") + ", einde " + (eindes[eindes.length - 1] || "?") : "Overgenomen van werkbon N° " + bonVanDag[0].nr);
         };
-        const status = opgeslagen && opgeslagen.opgeslagen && !gewijzigd ? "opgeslagen" : C.heeftInhoud(dag) ? "concept" : "leeg";
+        const status = opgeslagen && opgeslagen.opgeslagen && !gewijzigd ? "opgeslagen" : ietsIngevuld(dag) ? "concept" : "leeg";
         const isWerk = dag.soort === "werk";
 
         return h("div", { className: "urenDag" },
@@ -240,6 +155,7 @@
             isWerk ? h(React.Fragment, null,
                 bonVanDag.length ? h("button", { className: "btn grijs urenBon", onClick: neemOver },
                     bonVanDag.length > 1 ? "Neem over van " + bonVanDag.length + " werkbonnen (N° " + bonVanDag.map(x => x.nr).join(", ") + ")" : "Neem over van werkbon N° " + bonVanDag[0].nr + (bonVanDag[0].klantNaam ? " · " + bonVanDag[0].klantNaam : "")) : null,
+                !String(dag.klant || "").trim() && ietsIngevuld(dag) ? h("p", { className: "waarschuwing" }, "Vul nog een klant in: zonder klant telt deze dag niet mee in de berekening.") : null,
                 Veld("Klant", h("input", { id: "uKlant", list: "urenKlanten", value: dag.klant, onChange: e => zet({ klant: e.target.value }), placeholder: "Naam klant of omschrijving" })),
                 h("datalist", { id: "urenKlanten" }, (klanten || []).map(k => h("option", { key: k.id || k.naam, value: k.naam }))),
                 h("div", { className: "urenTwee2" },
@@ -248,16 +164,6 @@
                     h("label", { className: "schakel" + (dag.hotel ? " aan" : "") },
                         h("input", { type: "checkbox", checked: !!dag.hotel, onChange: e => zet({ hotel: e.target.checked }) }),
                         h("span", { className: "schakelBol" }), "Hotel (geen dagvergoeding)")),
-                window.ocrFoto ? h("div", { className: "rijtje kmScanKnoppen" },
-                    h("button", { className: "btn grijs", onClick: () => setScan("vertrek") }, window.Ic ? window.Ic("camera") : null, "Vertrek: scan teller"),
-                    h("button", { className: "btn grijs", onClick: () => setScan("thuis") }, window.Ic ? window.Ic("camera") : null, "Thuis: scan teller")) : null,
-                scan ? h(KmScan, { moment: scan, vorigeKm: scan === "vertrek" ? vorigeKm : (dag.kmStart || vorigeKm), melding, onSluit: () => setScan(""),
-                    onKlaar: (km, tijd, bevestigd) => {
-                        const veld = scan === "vertrek" ? "kmStart" : "kmEind";
-                        zet(Object.assign(scan === "vertrek" ? Object.assign({ soort: "werk" }, km ? { kmStart: km } : {}, tijd ? { vertrekThuis: tijd } : {}) : Object.assign({}, km ? { kmEind: km } : {}, tijd ? { aankomstThuis: tijd } : {}), bevestigd ? { kmOk: Object.assign({}, dag.kmOk, { [veld]: km }) } : {}));
-                        melding((scan === "vertrek" ? "Vertrek" : "Thuis") + " ingevuld: " + (tijd || "") + (km ? " · " + km + " km" : ""));
-                        setScan("");
-                    } }) : null,
                 h("div", { className: "dagvelden" },
                     h("label", null, "Vertrek thuis", Tijd(dag.vertrekThuis, v => zet({ vertrekThuis: v }), "uT1")),
                     h("label", null, "Aankomst klant", Tijd(dag.aankomstKlant, v => zet({ aankomstKlant: v }), "uT2")),
@@ -274,7 +180,7 @@
             ) : Veld(dag.soort === "F" ? "Naam feestdag (bv. Pasen)" : "Opmerking (bv. brugdag)", h("input", { id: "uOpm", value: dag.opm || "", onChange: e => zet({ opm: e.target.value }) })),
             h(Resultaat, { b, dag }),
             h("div", { className: "rijtje" },
-                h("button", { className: "btn grijs", onClick: wissen, disabled: !opgeslagen && !C.heeftInhoud(dag) }, "Wissen"),
+                h("button", { className: "btn grijs", onClick: wissen, disabled: !opgeslagen && !ietsIngevuld(dag) }, "Wissen"),
                 h("button", { className: "btn", onClick: opslaan }, "Dag opslaan")));
     }
 

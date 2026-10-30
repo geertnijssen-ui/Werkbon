@@ -1,8 +1,8 @@
 /* Werkbon MT Service: offline cache.
    Bij elke nieuwe upload: verhoog VERSIE hier EN const VERSIE in index.html (zelfde nummer). */
 const VERSIE = "werkbon-1.16";
-/* tekstherkenning (±13 MB) apart bewaren, zodat ze niet bij elke update opnieuw geladen wordt */
-const OCR = "werkbon-ocr-5.1.1";
+/* Excel-lezer apart bewaren, zodat hij niet bij elke update opnieuw geladen wordt (oude OCR-cache wordt zo ook gewist) */
+const LIBS = "werkbon-libs-xlsx-0.18.5";
 const BESTANDEN = [
   "./", "index.html", "manifest.webmanifest", "uren-calc.js", "uren-pdf.js", "uren.js",
   "libs/react.production.min.js", "libs/react-dom.production.min.js",
@@ -15,7 +15,7 @@ self.addEventListener("install", e => {
   e.waitUntil(caches.open(VERSIE).then(c => c.addAll(BESTANDEN)).then(() => self.skipWaiting()));
 });
 self.addEventListener("activate", e => {
-  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== VERSIE && k !== OCR).map(k => caches.delete(k)))).then(() => self.clients.claim()));
+  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== VERSIE && k !== LIBS).map(k => caches.delete(k)))).then(() => self.clients.claim()));
 });
 self.addEventListener("fetch", e => {
   const req = e.request;
@@ -29,9 +29,9 @@ self.addEventListener("fetch", e => {
     }).catch(() => caches.match("index.html")));
     return;
   }
-  /* OCR en Excel-lezer: pas laden bij eerste gebruik, bewaard over updates heen */
-  if (/\/libs\/(ocr|xlsx)\//.test(new URL(req.url).pathname)) {
-    e.respondWith(caches.open(OCR).then(c => c.match(req).then(r => r || fetch(req).then(resp => { if (resp.ok) c.put(req, resp.clone()); return resp; }))));
+  /* Excel-lezer: pas laden bij eerste gebruik, bewaard over updates heen */
+  if (new URL(req.url).pathname.indexOf("/libs/xlsx/") >= 0) {
+    e.respondWith(caches.open(LIBS).then(c => c.match(req).then(r => r || fetch(req).then(resp => { if (resp.ok) c.put(req, resp.clone()); return resp; }))));
     return;
   }
   e.respondWith(caches.match(req).then(r => r || fetch(req)));
